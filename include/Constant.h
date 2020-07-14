@@ -10,7 +10,7 @@ namespace Robomaster{
 namespace Constants{
 
 //敌方装甲颜色
-static const Enum::EnemyColor EnemyColor = Enum::EnemyColor::RED; 
+static const Enum::EnemyColor enemyColor = Enum::EnemyColor::RED; 
 //二值化阈值
 static const unsigned short BinaryRange = 80;
  //丢帧限制
@@ -54,7 +54,7 @@ static const float CompensationFactor_Z = 0.0;
 static const unsigned int RangeOfCorrect = 15;
 
 //----------------------------固定参数---------------------------------
-static const float radian = 3.1415926/180;
+static const float Radian = 3.1415926/180;
 
 //大装甲实际大小
 static const float rLargeArmorWidth = 22.5;
@@ -106,7 +106,7 @@ enum class  ProcState{
 enum class ArmorCatglory{
     SMALL, //小装甲
     LARGE, //大装甲
-    RUNE //大符
+    RUNE, //大符
 };
 
 //敌方颜色

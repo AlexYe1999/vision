@@ -13,7 +13,9 @@ ArmorDector::ArmorDector():
     isFindtarget(0),
     startDegree(0.0),
     lastTarget(),
-    latestAngle()
+    latestAngle(),
+    lastM(),
+    nowM()
 {}
 
 
@@ -50,10 +52,9 @@ void ArmorDector::SetAngle(Struct::Angle& latestAngle){
  * @return 是否成功
  */
 bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
-    Eigen::Vector3f Pos;
     switch(mode){
         case Enum::Mode::Armor:{
-            GetArmorData(frame, Pos);
+            GetArmorData(frame);
             break;
         }
         case Enum::Mode::Rune:{
@@ -94,7 +95,7 @@ bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
  * @param aimPos 射击点
  * @return 是否找到 
  */
-void ArmorDector::GetArmorData(const cv::Mat & frame, Eigen::Vector3f& Pos){
+void ArmorDector::GetArmorData(const cv::Mat & frame){
     unsigned short armorNum;
     unsigned short ledNum;    
     ArmorData allArmor[10];
@@ -138,12 +139,11 @@ void ArmorDector::GetArmorData(const cv::Mat & frame, Eigen::Vector3f& Pos){
 
     GetAngleData(allArmor, armorNum);
 
-    predictStatus =  selectBestArmor(allArmor,  armorNum, Pos);
+    predictStatus =  selectBestArmor(allArmor,  armorNum);
 
 }
 
 unsigned short ArmorDector::GetRuneData(const cv::Mat & frame, ArmorData allArmor[]){
-
 
 
 }
@@ -158,7 +158,7 @@ void ArmorDector::SeparateColor(const cv::Mat & frame, cv::Mat & binaryImage){
     cv::Mat splitIamge[3];
     split(frame, splitIamge);
     
-    switch(Constants::EnemyColor){
+    switch(Constants::enemyColor){
         case Enum::EnemyColor::BLUE:{
             binaryImage = splitIamge[0] - splitIamge[2];
             break;
@@ -260,10 +260,8 @@ unsigned short ArmorDector::CombinateLED(LedData ledArray[], ArmorData armorArra
             float wRatio =  centerDeltaX / length;
             float whRatio = centerDistance / length;
 
-            if( hRatio > Constants::DeltaYRatio 
-                || wRatio > Constants::DeltaXRatio 
-                || whRatio > Constants::ArmorMaxRatio 
-                || whRatio < Constants::ArmorMinRatio) continue;
+            if( hRatio > Constants::DeltaYRatio || wRatio > Constants::DeltaXRatio 
+            || whRatio > Constants::ArmorMaxRatio || whRatio < Constants::ArmorMinRatio) continue;
             
             SelectedTarget[i] = 1;
             SelectedTarget[j] = 1;
@@ -378,41 +376,101 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
         }
     }
 
-//    armor.yaw = atan2(tx,tz)*180/CV_PI;     //解算 yaw 轴偏移量
-//    armor.pitch = atan2(ty,tz)*180/CV_PI;   //解算 pitch 轴偏移量
-//    armor.pitch = atan2(ty,sqrt(tx*tx+tz*tz))*180/CV_PI;   //解算 pitch 轴偏移量
     armor.tx = static_cast<float>(tx)-Constants::CompensationFactor_X;
     armor.ty = static_cast<float>(ty)-Constants::CompensationFactor_Y;
     armor.tz = static_cast<float>(tz)-Constants::CompensationFactor_Z;
-//    armor.distance = sqrt(tx*tx + ty*ty + tz*tz);
 
 }
 
-Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize,Eigen::Vector3f& bestPos){
+Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize){
 
     Eigen::Vector3f correctedPos(lastTarget.x, lastTarget.y, lastTarget.z);
     
-    RotatedByYaw();
-    RotatedByPitch();
-    
-    
-    
-    for(unsigned i = 0; i < ArmorSize; i++){
+    RotatedByYaw(correctedPos);
+    RotatedByPitch(correctedPos);
+    float x = correctedPos[0];
+    float y = correctedPos[1];
+    float z = correctedPos[2];
+    float X;
+    float Y;
+    float Z;
+    unsigned short distanceT;
+    unsigned short distanceSame = 0x7fff;
+    unsigned short distanceDifferent = 0x7fff;
+
+    unsigned short targetSameInex;
+    unsigned short targetDifferentIndex;
+    for(unsigned short i = 0; i < ArmorSize; i++){
         
+        X = allArmor[i].tx;
+        Y = allArmor[i].ty;
+        Z = allArmor[i].tz;
+        distanceT = static_cast<unsigned short>(sqrt(X*X+Y*Y+Z*Z));
 
+        if(lastTarget.armorCatglory == allArmor[i].armorCatglory){
+            if(distanceT < distanceSame){
+                targetSameInex = i;
+            }
+        }
+        else{
+            if(distanceT < distanceDifferent){
+                targetDifferentIndex = i;
+            }
+        }
 
+        if(distanceSame != 0x7fff){
+            lastTarget.x = allArmor[distanceSame].tx;
+            lastTarget.y = allArmor[distanceSame].ty;
+            lastTarget.z = allArmor[distanceSame].tz;          
+            lastTarget.lastAngle = latestAngle;           
+            return Enum::PredictStatus::FIND;
+        }
+        else if(distanceDifferent != 0x7fff){
+            if(isFindtarget && lostTarget < Constants::LostRange){
+                lostTarget++;                
+                return Enum::PredictStatus::UNCLEAR;
+            }
+            else{
+                lastTarget.x = allArmor[distanceDifferent].tx;
+                lastTarget.y = allArmor[distanceDifferent].ty;
+                lastTarget.z = allArmor[distanceDifferent].tz;          
+                lastTarget.lastAngle = latestAngle;           
+                lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                return Enum::PredictStatus::NEW;                
+            }
+        }
+        return Enum::PredictStatus::NONE;
     }
 
-
 }
 
-void ArmorDector::RotatedByYaw(){
-    
+void ArmorDector::RotatedByYaw(Eigen::Vector3f& vec){
+    float last = Constants::Radian * lastTarget.lastAngle.yaw;
+    float now = Constants::Radian * latestAngle.yaw;
 
+    lastM <<   cos(last), 0, -sin(last),
+                    0,          1,          0, 
+                    sin(last), 0, cos(last);
+
+    nowM <<   cos(now), 0, -sin(now),
+                    0,          1,          0,
+                    sin(now), 0, cos(now);
+
+    vec = lastM*nowM.inverse()*vec;
 }
 
-void ArmorDector::RotatedByPitch(){
+void ArmorDector::RotatedByPitch(Eigen::Vector3f& vec){
+    float last = Constants::Radian * lastTarget.lastAngle.pitch;
+    float now = Constants::Radian * latestAngle.pitch;
 
+    lastM <<   1,          0,          0,
+                    0, cos(last), sin(last),
+                    0, -sin(last),  cos(last);
 
+    nowM <<   1,             0,          0,
+                        0, cos(now), sin(now),
+                        0, -sin(now),  cos(now);
+
+    vec = lastM*nowM.inverse()*vec;
 
 }

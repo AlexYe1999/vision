@@ -38,7 +38,7 @@ public:
     float y;
     float z;
     Struct::Angle lastAngle;
-    Enum::ArmorCatglory armorCat;
+    Enum::ArmorCatglory armorCatglory;
     Target():x(0),y(0),z(0),lastAngle(){}
 };
 
@@ -87,7 +87,7 @@ public:
     inline void SetAngle(Struct::Angle& latestAngle);
 
 private:
-    void GetArmorData(const cv::Mat & frame, Eigen::Vector3f& Pos); 
+    void GetArmorData(const cv::Mat & frame); 
     unsigned short GetRuneData(const cv::Mat & frame, ArmorData allArmor[]); 
 
 private:
@@ -102,12 +102,12 @@ private:
     void get3dPointData(const ArmorData & armor, std::vector<cv::Point3f> & point3D);       //世界坐标系
     void solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& point3D, const std::vector<cv::Point2f>& point2D);
 private:
-    Enum::PredictStatus selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize,Eigen::Vector3f& bestPos);
+    Enum::PredictStatus selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize);
 
 
 private:
-    inline void RotatedByYaw();
-    inline void RotatedByPitch();
+    inline void RotatedByYaw(Eigen::Vector3f& vec);
+    inline void RotatedByPitch(Eigen::Vector3f& vec);
     
 private:
     static bool ledCmp(const LedData a, const LedData b){
@@ -124,6 +124,8 @@ private:
     float startDegree;
     Struct::Angle latestAngle;
     Target lastTarget;
+    Eigen::Matrix3f lastM;
+    Eigen::Matrix3f nowM;
 
 };
 
