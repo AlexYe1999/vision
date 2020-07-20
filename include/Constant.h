@@ -51,7 +51,7 @@ static const float CompensationFactor_Y = 0.0;
 static const float CompensationFactor_Z = 0.0;
 
 //目标确定为同一个的距离最大值
-static const unsigned int RangeOfCorrect = 15;
+static const unsigned int RangeOfCorrect = 30;
 
 //----------------------------固定参数---------------------------------
 static const float Radian = 3.1415926/180;

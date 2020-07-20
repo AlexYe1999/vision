@@ -14,8 +14,9 @@ ArmorDector::ArmorDector():
     startDegree(0.0),
     lastTarget(),
     latestAngle(),
-    lastM(),
-    nowM()
+    Myaw(),
+    Mpitch(),
+    frameCount(0)
 {}
 
 
@@ -84,6 +85,25 @@ bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
         }break;
     }
 
+}
+
+/**
+ * @brief 伽马值评估
+ * 
+ */
+void GetGamma(){
+
+
+
+
+}
+
+
+/**
+ * @brief 伽马变换
+ * 
+ */
+void GammaTransf(){
 
 
 
@@ -385,9 +405,8 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
 Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize){
 
     Eigen::Vector3f correctedPos(lastTarget.x, lastTarget.y, lastTarget.z);
-    
-    RotatedByYaw(correctedPos);
-    RotatedByPitch(correctedPos);
+    SetM(latestAngle.yaw,latestAngle.pitch);
+    Rotate(correctedPos);
     float x = correctedPos[0];
     float y = correctedPos[1];
     float z = correctedPos[2];
@@ -395,16 +414,16 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
     float Y;
     float Z;
     unsigned short distanceT;
-    unsigned short distanceSame = 0x7fff;
-    unsigned short distanceDifferent = 0x7fff;
+    unsigned short distanceSame = 0xffff;
+    unsigned short distanceDifferent = 0xffff;
 
     unsigned short targetSameInex;
     unsigned short targetDifferentIndex;
     for(unsigned short i = 0; i < ArmorSize; i++){
         
-        X = allArmor[i].tx;
-        Y = allArmor[i].ty;
-        Z = allArmor[i].tz;
+        X = allArmor[i].tx-x;
+        Y = allArmor[i].ty-y;
+        Z = allArmor[i].tz-z;
         distanceT = static_cast<unsigned short>(sqrt(X*X+Y*Y+Z*Z));
 
         if(lastTarget.armorCatglory == allArmor[i].armorCatglory){
@@ -417,24 +436,46 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
                 targetDifferentIndex = i;
             }
         }
+        
+        if(predictStatus == Enum::PredictStatus::NONE){
+            if(distanceSame > distanceDifferent){
+                Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
+                ReverseRotate(t);
+                lastTarget.x = t[0];
+                lastTarget.y = t[1];
+                lastTarget.z = t[2];
+                lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                return Enum::PredictStatus::NEW;          
+            }
+            else if(distanceSame < distanceDifferent){
+                Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
+                ReverseRotate(t);
+                lastTarget.x = t[0];
+                lastTarget.y = t[1];
+                lastTarget.z = t[2];
+                lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                return Enum::PredictStatus::NEW;          
+            }
+            return  Enum::PredictStatus::NONE;
+        }
 
-        if(distanceSame != 0x7fff){
+        if(distanceSame != 0xffff && distanceSame < Constants::RangeOfCorrect){
             lastTarget.x = allArmor[distanceSame].tx;
             lastTarget.y = allArmor[distanceSame].ty;
-            lastTarget.z = allArmor[distanceSame].tz;          
-            lastTarget.lastAngle = latestAngle;           
+            lastTarget.z = allArmor[distanceSame].tz;
             return Enum::PredictStatus::FIND;
         }
-        else if(distanceDifferent != 0x7fff){
+        else if(distanceDifferent != 0xffff){
             if(isFindtarget && lostTarget < Constants::LostRange){
                 lostTarget++;                
                 return Enum::PredictStatus::UNCLEAR;
             }
             else{
-                lastTarget.x = allArmor[distanceDifferent].tx;
-                lastTarget.y = allArmor[distanceDifferent].ty;
-                lastTarget.z = allArmor[distanceDifferent].tz;          
-                lastTarget.lastAngle = latestAngle;           
+                Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
+                ReverseRotate(t);
+                lastTarget.x = t[0];
+                lastTarget.y = t[1];
+                lastTarget.z = t[2];
                 lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
                 return Enum::PredictStatus::NEW;                
             }
@@ -444,33 +485,20 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
 
 }
 
-void ArmorDector::RotatedByYaw(Eigen::Vector3f& vec){
-    float last = Constants::Radian * lastTarget.lastAngle.yaw;
-    float now = Constants::Radian * latestAngle.yaw;
-
-    lastM <<   cos(last), 0, -sin(last),
+void ArmorDector::SetM(float &yaw, float &pitch){
+    Myaw <<   cos(yaw), 0, -sin(yaw),
                     0,          1,          0, 
-                    sin(last), 0, cos(last);
+                    sin(yaw), 0, cos(yaw);
 
-    nowM <<   cos(now), 0, -sin(now),
-                    0,          1,          0,
-                    sin(now), 0, cos(now);
-
-    vec = lastM*nowM.inverse()*vec;
+    Mpitch <<   1,          0,          0,
+                    0, cos(pitch), sin(pitch),
+                    0, -sin(pitch),  cos(pitch);
 }
 
-void ArmorDector::RotatedByPitch(Eigen::Vector3f& vec){
-    float last = Constants::Radian * lastTarget.lastAngle.pitch;
-    float now = Constants::Radian * latestAngle.pitch;
+void ArmorDector::ReverseRotate(Eigen::Vector3f& vec){
+    vec = Myaw*Mpitch*vec;
+}
 
-    lastM <<   1,          0,          0,
-                    0, cos(last), sin(last),
-                    0, -sin(last),  cos(last);
-
-    nowM <<   1,             0,          0,
-                        0, cos(now), sin(now),
-                        0, -sin(now),  cos(now);
-
-    vec = lastM*nowM.inverse()*vec;
-
+void ArmorDector::Rotate(Eigen::Vector3f& vec){
+    vec = Mpitch.inverse()*Myaw.inverse()*vec;
 }

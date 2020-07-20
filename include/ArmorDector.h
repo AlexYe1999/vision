@@ -37,9 +37,8 @@ public:
     float x;
     float y;
     float z;
-    Struct::Angle lastAngle;
     Enum::ArmorCatglory armorCatglory;
-    Target():x(0),y(0),z(0),lastAngle(){}
+    Target():x(0),y(0),z(0){}
 };
 
 class RuneData{
@@ -91,6 +90,10 @@ private:
     unsigned short GetRuneData(const cv::Mat & frame, ArmorData allArmor[]); 
 
 private:
+    void GetGamma();
+    void GammaTransf();
+
+private:
     void SeparateColor(const cv::Mat & frame, cv::Mat & binaryImage);
     void TansformImage(const cv::Mat & binaryImage, cv::Mat & altimateImage);
     unsigned short GetLedArray(const cv::Mat & altimateImage, LedData rectArray[]);
@@ -106,13 +109,18 @@ private:
 
 
 private:
-    inline void RotatedByYaw(Eigen::Vector3f& vec);
-    inline void RotatedByPitch(Eigen::Vector3f& vec);
-    
+    inline void SetM(float &yaw, float &pitch);
+    inline void ReverseRotate(Eigen::Vector3f& vec);
+    inline void Rotate(Eigen::Vector3f& vec);
+
+
 private:
     static bool ledCmp(const LedData a, const LedData b){
         return a.length > b.length; //长的优先
     }
+
+private:
+    unsigned int frameCount;
 
 private:
     Enum::Mode mode;
@@ -124,8 +132,8 @@ private:
     float startDegree;
     Struct::Angle latestAngle;
     Target lastTarget;
-    Eigen::Matrix3f lastM;
-    Eigen::Matrix3f nowM;
+    Eigen::Matrix3f Myaw;
+    Eigen::Matrix3f Mpitch;
 
 };
 
