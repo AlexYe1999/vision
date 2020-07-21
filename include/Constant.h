@@ -3,6 +3,39 @@
 
 namespace Robomaster{
 
+//射击模式
+enum class Mode{
+    Armor, //射击装甲板
+    Rune //射击大符
+};
+
+//照片处理标识
+enum class  ProcState{
+    ISPROC, //处理中
+    FINISHED //处理完成
+};
+
+//装甲板种类
+enum class ArmorCatglory{
+    SMALL, //小装甲
+    LARGE, //大装甲
+    RUNE, //大符
+};
+
+//敌方颜色
+enum class EnemyColor{
+    BLUE, //蓝色
+    RED, // 红色
+};
+
+//预测状态
+enum class PredictStatus{
+    NEW, //新目标
+    FIND, //找到上一个目标
+    UNCLEAR, //不确定
+    NONE //无目标
+};
+
 /*
 * @brief:常量空间 
 * 
@@ -10,7 +43,12 @@ namespace Robomaster{
 namespace Constants{
 
 //敌方装甲颜色
-static const Enum::EnemyColor enemyColor = Enum::EnemyColor::RED; 
+static const EnemyColor enemyColor = EnemyColor::RED; 
+//曝光时
+static const unsigned short ExposureTime = 2000;
+//曝光增益
+static const unsigned short ExposureGain = 300;
+
 //二值化阈值
 static const unsigned short BinaryRange = 80;
  //丢帧限制
@@ -84,47 +122,6 @@ static const cv::Mat distCoeffs_shoot = (
 
 }
 
-/*
-*   @brief:枚举量
-*/
-namespace Enum{
-
-
-//射击模式
-enum class Mode{
-    Armor, //射击装甲板
-    Rune //射击大符
-};
-
-//照片处理标识
-enum class  ProcState{
-    ISPROC, //处理中
-    FINISHED //处理完成
-};
-
-//装甲板种类
-enum class ArmorCatglory{
-    SMALL, //小装甲
-    LARGE, //大装甲
-    RUNE, //大符
-};
-
-//敌方颜色
-enum class EnemyColor{
-    BLUE, //蓝色
-    RED, // 红色
-};
-
-//预测状态
-enum class PredictStatus{
-    NEW, //新目标
-    FIND, //找到上一个目标
-    UNCLEAR, //不确定
-    NONE //无目标
-};
-
-
-}
 
 /*
 *   @brief:结构体
@@ -157,7 +154,8 @@ namespace Class{
  * @param 
  */
 class ExchangeData{
-    
+    float pitch;
+    float yaw;
 };
 
 

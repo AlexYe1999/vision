@@ -4,28 +4,38 @@
 #include<eigen3/Eigen/Eigen>
 #include"ArmorDector.h"
 #include"Constant.h"
+#include"KalmanFilter.h"
+#include"Debug.h"
 using namespace Robomaster;
 
+#ifdef SHOW_IMAGE
+extern cv::Mat Rune;
+#endif
+
 ArmorDector::ArmorDector():
-    mode(Enum::Mode::Armor),
-    predictStatus (Enum::PredictStatus::NONE),
+    mode(Mode::Armor),
+    predictStatus (PredictStatus::NONE),
     lostTarget(0),
     isFindtarget(0),
     startDegree(0.0),
     lastTarget(),
+    target(),
     latestAngle(),
     Myaw(),
     Mpitch(),
-    frameCount(0)
+    frameCount(0),
+    level(0),
+    predict(),
+    bulletVelocity(8)
 {}
 
 
 /**
  *@brief 设置射击模式 
  */
-void ArmorDector::SetMode(volatile Enum::Mode& tMode){
+void ArmorDector::SetMode(volatile Mode& tMode){
     if(tMode != mode){
-        predictStatus = Enum::PredictStatus::NONE;
+        predictStatus = PredictStatus::NONE;
     }
 
     mode = tMode;
@@ -34,7 +44,7 @@ void ArmorDector::SetMode(volatile Enum::Mode& tMode){
 /**
  *@brief 返回处于的模式
  */
-Enum::Mode ArmorDector::GetMode() const {
+Mode ArmorDector::GetMode() const {
     return mode;
 }
 
@@ -54,11 +64,11 @@ void ArmorDector::SetAngle(Struct::Angle& latestAngle){
  */
 bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
     switch(mode){
-        case Enum::Mode::Armor:{
+        case Mode::Armor:{
             GetArmorData(frame);
             break;
         }
-        case Enum::Mode::Rune:{
+        case Mode::Rune:{
 
 
             break;
@@ -68,20 +78,18 @@ bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
     }
 
     switch(predictStatus)   {
-        case Enum::PredictStatus::NEW:{
-
+        case PredictStatus::NEW:{
+            predict.init3D(target);
         }break;
-        case  Enum::PredictStatus::FIND:{
-
+        case  PredictStatus::FIND:{
+            predict.predict3D(lastTarget, bulletVelocity);
         }break;
-        case Enum::PredictStatus::UNCLEAR:{
-
+        case PredictStatus::UNCLEAR:{
+            predict.predictNotarget3D(bulletVelocity);
         }break;
-        case Enum::PredictStatus::NONE:{
-
+        case PredictStatus::NONE:{
         }break;
         default:{
-
         }break;
     }
 
@@ -130,29 +138,28 @@ void ArmorDector::GetArmorData(const cv::Mat & frame){
 
     if(ledNum < 2){
         if(isFindtarget && lostTarget < Constants::LostRange){ //丢三帧以内
-            predictStatus = Enum::PredictStatus::UNCLEAR;
+            predictStatus = PredictStatus::UNCLEAR;
             lostTarget++;
         }
         else{   //超过误差
             lostTarget = 0;
             isFindtarget = false;
-            predictStatus = Enum::PredictStatus::NONE;
+            predictStatus = PredictStatus::NONE;
         }
         return;
     }
 
-    unsigned short armorNum;
     armorNum = CombinateLED(ledArray, allArmor, ledNum);
 
     if(armorNum < 2){
         if(isFindtarget && lostTarget < Constants::LostRange){ //丢三帧以内
-            predictStatus = Enum::PredictStatus::UNCLEAR;
+            predictStatus = PredictStatus::UNCLEAR;
             lostTarget++;
         }
         else{   //超过误差
             lostTarget = 0;
             isFindtarget = false;
-            predictStatus = Enum::PredictStatus::NONE;
+            predictStatus = PredictStatus::NONE;
         }
         return;
     }
@@ -179,11 +186,11 @@ void ArmorDector::SeparateColor(const cv::Mat & frame, cv::Mat & binaryImage){
     split(frame, splitIamge);
     
     switch(Constants::enemyColor){
-        case Enum::EnemyColor::BLUE:{
+        case EnemyColor::BLUE:{
             binaryImage = splitIamge[0] - splitIamge[2];
             break;
         }
-        case Enum::EnemyColor::RED:{
+        case EnemyColor::RED:{
             binaryImage = splitIamge[2] - splitIamge[0];
             break;
         }
@@ -287,10 +294,10 @@ unsigned short ArmorDector::CombinateLED(LedData ledArray[], ArmorData armorArra
             SelectedTarget[j] = 1;
             
             if(whRatio > 3){
-                armorArray[armorSize].armorCatglory = Enum::ArmorCatglory::LARGE;
+                armorArray[armorSize].armorCatglory = ArmorCatglory::LARGE;
             }
             else{
-                armorArray[armorSize].armorCatglory = Enum::ArmorCatglory::SMALL;
+                armorArray[armorSize].armorCatglory = ArmorCatglory::SMALL;
             }
             
             if(ledArray[i].center.x < ledArray[j].center.x){
@@ -310,6 +317,23 @@ unsigned short ArmorDector::CombinateLED(LedData ledArray[], ArmorData armorArra
         }
         if(armorSize == 10) return armorSize;
     }
+
+#ifdef SHOW_IMAGE
+    cv::namedWindow("All Aromr");
+    cv::Mat a = Rune.clone();
+    for(int i = 0;i < armorSize;i++){
+        for(int i = 0;i < 4;i++){
+            cv::line(a,armorArray[i].leftLed[0],armorArray[i].leftLed[1],cv::Scalar(0,0,255),1,8);
+            cv::line(a,armorArray[i].rightLed[0],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
+            cv::line(a,armorArray[i].leftLed[0],armorArray[i].rightLed[0],cv::Scalar(0,0,255),1,8);
+            cv::line(a,armorArray[i].leftLed[1],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
+        }
+    }
+    std::cout<<"Aromor Count:"<<armorSize<<"\n";
+    cv::imshow("All Aromr",a);
+    cv::waitKey(1);
+#endif
+
     return armorSize;
 }
 
@@ -336,17 +360,17 @@ inline void ArmorDector::get3dPointData(const ArmorData & armor, std::vector<cv:
     float fHalfY = 0;
 
     switch(armor.armorCatglory){
-        case Enum::ArmorCatglory::SMALL:{
+        case ArmorCatglory::SMALL:{
             fHalfX = Constants::rSmallArmorWidth / 2;
             fHalfY = Constants::rSmallArmorHeight / 2;
             break;
         }
-        case Enum::ArmorCatglory::LARGE:{
+        case ArmorCatglory::LARGE:{
             fHalfX = Constants::rLargeArmorWidth / 2;
             fHalfY = Constants::rLargeArmorHeight / 2;
             break;
         }
-        case Enum::ArmorCatglory::RUNE:{
+        case ArmorCatglory::RUNE:{
             fHalfX = Constants::rRuneWidth / 2;
             fHalfY = Constants::rRuneHeight / 2;
             break;
@@ -371,7 +395,7 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
     double tz;
 
     switch(mode){
-        case Enum::Mode::Armor:
+        case Mode::Armor:
         {
             //!大能量机关
             cv::Mat caremaMatrix = Constants::caremaMatrix_shoot;
@@ -383,7 +407,7 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
             tz = tvecs.ptr<double>(0)[2];
 
         }
-        case Enum::Mode::Rune:{
+        case Mode::Rune:{
             //!辅助射击
             cv::Mat caremaMatrix = Constants::caremaMatrix_shoot;
             cv::Mat distCoeffs = Constants::distCoeffs_shoot;
@@ -402,7 +426,7 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
 
 }
 
-Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize){
+PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize){
 
     Eigen::Vector3f correctedPos(lastTarget.x, lastTarget.y, lastTarget.z);
     SetM(latestAngle.yaw,latestAngle.pitch);
@@ -416,9 +440,9 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
     unsigned short distanceT;
     unsigned short distanceSame = 0xffff;
     unsigned short distanceDifferent = 0xffff;
-
     unsigned short targetSameInex;
     unsigned short targetDifferentIndex;
+
     for(unsigned short i = 0; i < ArmorSize; i++){
         
         X = allArmor[i].tx-x;
@@ -437,7 +461,7 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
             }
         }
         
-        if(predictStatus == Enum::PredictStatus::NONE){
+        if(predictStatus == PredictStatus::NONE){
             if(distanceSame > distanceDifferent){
                 Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
                 ReverseRotate(t);
@@ -445,7 +469,7 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
                 lastTarget.y = t[1];
                 lastTarget.z = t[2];
                 lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
-                return Enum::PredictStatus::NEW;          
+                return PredictStatus::NEW;          
             }
             else if(distanceSame < distanceDifferent){
                 Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
@@ -454,45 +478,48 @@ Enum::PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], con
                 lastTarget.y = t[1];
                 lastTarget.z = t[2];
                 lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
-                return Enum::PredictStatus::NEW;          
+                return PredictStatus::NEW;
             }
-            return  Enum::PredictStatus::NONE;
+            return  PredictStatus::NONE;
         }
 
         if(distanceSame != 0xffff && distanceSame < Constants::RangeOfCorrect){
             lastTarget.x = allArmor[distanceSame].tx;
             lastTarget.y = allArmor[distanceSame].ty;
             lastTarget.z = allArmor[distanceSame].tz;
-            return Enum::PredictStatus::FIND;
+            return PredictStatus::FIND;
         }
         else if(distanceDifferent != 0xffff){
             if(isFindtarget && lostTarget < Constants::LostRange){
                 lostTarget++;                
-                return Enum::PredictStatus::UNCLEAR;
+                return PredictStatus::UNCLEAR;
             }
             else{
                 Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
                 ReverseRotate(t);
-                lastTarget.x = t[0];
-                lastTarget.y = t[1];
-                lastTarget.z = t[2];
-                lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
-                return Enum::PredictStatus::NEW;                
+                target.x = t[0];
+                target.y = t[1];
+                target.z = t[2];
+                target.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                return PredictStatus::NEW;                
             }
         }
-        return Enum::PredictStatus::NONE;
+        else if(lostTarget < Constants::LostRange){
+            lostTarget++;                
+            return PredictStatus::UNCLEAR;
+        }
+        return PredictStatus::NONE;
     }
-
 }
 
 void ArmorDector::SetM(float &yaw, float &pitch){
-    Myaw <<   cos(yaw), 0, -sin(yaw),
-                    0,          1,          0, 
-                    sin(yaw), 0, cos(yaw);
+    Myaw <<     cos(yaw), 0, -sin(yaw),
+                            0,          1,          0, 
+                            sin(yaw), 0, cos(yaw);
 
     Mpitch <<   1,          0,          0,
-                    0, cos(pitch), sin(pitch),
-                    0, -sin(pitch),  cos(pitch);
+                            0, cos(pitch), sin(pitch),
+                            0, -sin(pitch),  cos(pitch);
 }
 
 void ArmorDector::ReverseRotate(Eigen::Vector3f& vec){

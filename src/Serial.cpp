@@ -1,8 +1,11 @@
 #include"Serial.h"
 #include"CRC_Check.h"
 #include"ImageProcess.h"
+#include "Constant.h"
+using namespace Robomaster;
 
 extern ProcState procState;
+
 extern Mode tMode;
 
 int Serial::paraReceiver(){
@@ -67,15 +70,21 @@ int Serial::ConfigurePort(){
     return (portNum);
 }
 
+
+
+
 /**
 *   @brief:发送数据
 *   @param:
-*          send_bytes[0]
+*          send_bytes[0] 0xff
 *          send_bytes[1]--send_bytes[4]为pitch数据
-*          send_bytes[5] pitch标志位
+*          send_bytes[5] pitch符号位
 *          send_bytes[6]--send_bytes[9]为yaw数据
-*          send_bytes[10]  yaw标志位
-*          send_bytes[11]--send_bytes[12]为CRC校验码
+*          send_bytes[10]  yaw符号位
+*          send_bytes[11] 是否监测到
+*          send_bytes[12]距离
+*          send_bytes[13]打弹
+*          send_bytes[14]-[15]校验
 >>>>>>> 47dad157eee92bce1fca6030481f3b2978a34bec
 */
 void Serial::SendData(VisionData & data)
@@ -124,6 +133,14 @@ void Serial::SendData(VisionData & data)
 
 /**
 *   @brief:串口PC端接收
+*   @param:
+*          send_bytes[0] 0xff 
+*          send_bytes[1]--send_bytes[4]为pitch数据 
+*          send_bytes[5] pitch符号位
+*          send_bytes[6]--send_bytes[9]为yaw数据
+*          send_bytes[10]  yaw符号位
+*          send_bytes[11] 等级
+*          send_bytes[12] 0xff
 */
 void Serial::ReciveData(ReceivedData & data){
 

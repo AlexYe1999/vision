@@ -1,0 +1,3 @@
+/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/rebuild_cache.dir
+/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir
+/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/edit_cache.dir

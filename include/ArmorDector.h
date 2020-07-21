@@ -16,7 +16,7 @@ using namespace Robomaster;
 class ArmorData{
 public:    
 
-    Enum::ArmorCatglory armorCatglory; //装甲板种类
+    ArmorCatglory armorCatglory; //装甲板种类
     cv::Point2f leftLed[2];     //左灯条
     cv::Point2f rightLed[2];        //右灯条
 
@@ -28,16 +28,16 @@ public:
     //float pitch = 0;        //pitch 轴偏差角度
     //float yaw = 0;      //yaw 轴偏差角度
     //float distance = 0; //实际距离
-    ArmorData():armorCatglory(Enum::ArmorCatglory::SMALL),tx(0),ty(0),tz(0){};
+    ArmorData():armorCatglory(ArmorCatglory::SMALL),tx(0),ty(0),tz(0){};
 };
 
-//保存上一目标
+//目标信息
 class Target{
 public:  
     float x;
     float y;
     float z;
-    Enum::ArmorCatglory armorCatglory;
+    ArmorCatglory armorCatglory;
     Target():x(0),y(0),z(0){}
 };
 
@@ -81,9 +81,9 @@ public:
 
 public:
     bool StartProc(const cv::Mat& frame, cv::Point2f& aimPos); //开始
-    inline void SetMode(volatile Enum::Mode& tMode);
-    inline Enum::Mode GetMode() const;
-    inline void SetAngle(Struct::Angle& latestAngle);
+    void SetMode(volatile Mode& tMode);
+    Mode GetMode() const;
+    void SetAngle(Struct::Angle& latestAngle);
 
 private:
     void GetArmorData(const cv::Mat & frame); 
@@ -105,9 +105,10 @@ private:
     void get3dPointData(const ArmorData & armor, std::vector<cv::Point3f> & point3D);       //世界坐标系
     void solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& point3D, const std::vector<cv::Point2f>& point2D);
 private:
-    Enum::PredictStatus selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize);
+    PredictStatus selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize);
 
-
+private:
+    Prediction predict;
 private:
     inline void SetM(float &yaw, float &pitch);
     inline void ReverseRotate(Eigen::Vector3f& vec);
@@ -123,8 +124,10 @@ private:
     unsigned int frameCount;
 
 private:
-    Enum::Mode mode;
-    Enum::PredictStatus predictStatus;
+    unsigned short level;
+    Mode mode;
+    PredictStatus predictStatus;
+    float bulletVelocity;
 
 private:
     unsigned short lostTarget;
@@ -132,6 +135,7 @@ private:
     float startDegree;
     Struct::Angle latestAngle;
     Target lastTarget;
+    Target target;
     Eigen::Matrix3f Myaw;
     Eigen::Matrix3f Mpitch;
 
