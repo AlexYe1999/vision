@@ -83,7 +83,7 @@ static const float ArmorMaxRatio = 6.0;
 
 
 //目标确定为同一个的距离最大值
-static const unsigned int RangeOfCorrect = 30;
+static const unsigned int RangeOfCorrect = 300;
 
 static const unsigned int RangeOfShoot = 5;
 //----------------------------固定参数---------------------------------

@@ -74,9 +74,8 @@ void ImageProcess::ImageProducer(){
 #else
 
 #ifdef CAMERA_ON
-    DaHengCamera Camera;
-    
 initCamera:
+    DaHengCamera Camera;
     while(!Camera.StartDevice());
     Camera.SetResolution();
     while(!Camera.StreamOn());
@@ -114,14 +113,15 @@ initCamera:
         }
         if(gain != gain_value){
             gain = gain_value;
-            if(!Camera.SetGain(3, gain)){
-                goto initCamera;
-            }
+            Camera.SetGain(3, gain);
         }
 
         switch(Mode::Armor){  //射击模式
             case Mode::Armor:{
-                Camera.GetMat(MatBuffer[MatRear%5]);
+                if(!Camera.GetMat(MatBuffer[MatRear%5])){
+                    Camera.~DaHengCamera();
+                    goto initCamera;                  
+                }
                 MatRear++;
                 break;
             }
@@ -190,6 +190,8 @@ void ImageProcess::ImageConsumer(){
 
 #ifdef SHOW_IMAGE
         Rune = srcFrame.clone();
+        std::cout<<"\n\n-------------------------------------------------------------------------\n"
+                          <<"-------------------------------------------------------------------------\n\n\n";
 #endif
 
         exchangeMutex.lock();
@@ -199,15 +201,21 @@ void ImageProcess::ImageConsumer(){
         procState = ProcState::ISPROC;
         //if(!armorDector.StartProc(srcFrame, aimPos)) continue;
         armorDector.StartProc(srcFrame, angle);
+
         //填数
         armorDector.ConfigureData(visionData, angle);
-        //发数        
+        //发数
         procState = ProcState::FINISHED;
 
+#ifdef SHOW_IMAGE
+    cv::imshow("All Armor",Rune);
+    cv::waitKey(1);
+#endif
 
 #ifdef TIME_COST
         std::cout<<"process time:"<<static_cast<double>((cv::getTickCount() - tick)*1000/cv::getTickFrequency())<<" ms\n";
 #endif
+
     }
 
 }

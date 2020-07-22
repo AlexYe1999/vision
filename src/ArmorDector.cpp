@@ -2,7 +2,6 @@
 #include<Eigen/Core>
 #include<Eigen/Dense>
 #include<eigen3/Eigen/Eigen>
-#include<sstream>
 #include"ArmorDector.h"
 #include"Constant.h"
 #include"KalmanFilter.h"
@@ -101,18 +100,38 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
         case PredictStatus::NEW:{
             predict.init3D(target);
             isFindtarget = true;
+
+#ifdef SHOW_IMAGE
+            std::cout << "NEW\n";
+#endif
+
         }break;
         case  PredictStatus::FIND:{
             angle = predict.predict3D(lastTarget, bulletVelocity);
             isFindtarget = true;
+
+#ifdef SHOW_IMAGE
+            std::cout << "FIND\n";
+#endif
+
         }break;
         case PredictStatus::UNCLEAR:{
             angle = predict.predictNotarget3D(bulletVelocity);
             isFindtarget = true;
+
+#ifdef SHOW_IMAGE
+            std::cout << "UNCLEAR\n";
+ #endif
+
         }break;
         case PredictStatus::NONE:{
             lostCount++;
             isFindtarget = false;
+
+#ifdef SHOW_IMAGE
+           std::cout << "NONE\n";
+#endif
+
         }break;
         default:{
         }break;
@@ -127,13 +146,7 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
     pitch = atan2(angle[1],angle[2])/Constants::Radian;
 
 #ifdef SHOW_IMAGE
-
-    string<<"pitch: "<< pitch<<"\nyaw: "<<yaw<<"\ndistance: "<<distance<<std::endl;
-
-    cv::putText(Rune,string.str(),cv::Point(20,20),CV_FONT_HERSHEY_SIMPLEX,2,cv::Scalar(0,0,255),1,8);
-    cv::imshow("All Armor",Rune);
-    cv::waitKey(1);
-
+    std::cout <<"pitch: "<<pitch<<"  yaw: "<<yaw<<"  distance: "<<distance<<std::endl;
 #endif
 }
 
@@ -208,7 +221,7 @@ void ArmorDector::GetArmorData(const cv::Mat & frame){
 
     armorNum = CombinateLED(ledArray, allArmor, ledNum);
 
-    if(armorNum < 2){
+    if(armorNum == 0){
         if(isFindtarget && lostTarget < Constants::LostRange){ //丢三帧以内
             predictStatus = PredictStatus::UNCLEAR;
             lostTarget++;
@@ -220,8 +233,9 @@ void ArmorDector::GetArmorData(const cv::Mat & frame){
         }
         return;
     }
-
+#ifdef SHOW_IMAGE    
     GetAngleData(allArmor, armorNum);
+#endif
 
     predictStatus =  selectBestArmor(allArmor,  armorNum);
 
@@ -384,7 +398,7 @@ unsigned short ArmorDector::CombinateLED(LedData ledArray[], ArmorData armorArra
             cv::line(Rune,armorArray[i].leftLed[1],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
         }
     }
-    string<<"Aromor Count: "<<armorSize<<"\n";
+    std::cout<<"Aromor Count: "<<armorSize<<"\n";
 #endif
 
     return armorSize;
@@ -476,14 +490,14 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
     armor.tx = static_cast<float>(tx)-Constants::CompensationFactor_X;
     armor.ty = static_cast<float>(ty)-Constants::CompensationFactor_Y;
     armor.tz = static_cast<float>(tz)+Constants::CompensationFactor_Z;
-
 }
 
 PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const unsigned short & ArmorSize){
 
     Eigen::Vector3f correctedPos(lastTarget.x, lastTarget.y, lastTarget.z);
     SetM(latestAngle.yaw,latestAngle.pitch);
-    Rotate(correctedPos);
+    Rotate(correctedPos);// 变换到当前帧
+
     float x = correctedPos[0];
     float y = correctedPos[1];
     float z = correctedPos[2];
@@ -506,40 +520,51 @@ PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const uns
         if(lastTarget.armorCatglory == allArmor[i].armorCatglory){
             if(distanceT < distanceSame){
                 targetSameInex = i;
+                distanceSame = distanceT;
             }
         }
         else{
             if(distanceT < distanceDifferent){
                 targetDifferentIndex = i;
+                distanceDifferent = distanceT;
             }
         }
         
+#ifdef SHOW_IMAGE
+        std::cout<<"distanceSame: "<< distanceSame <<std::endl;
+        std::cout<<"distanceDifferent: "<< distanceDifferent <<std::endl;        
+#endif
+
         if(predictStatus == PredictStatus::NONE){
             if(distanceSame > distanceDifferent){
-                Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
+                Eigen::Vector3f t(allArmor[targetDifferentIndex].tx, allArmor[targetDifferentIndex].ty, allArmor[targetDifferentIndex].tz);
                 ReverseRotate(t);
                 lastTarget.x = t[0];
                 lastTarget.y = t[1];
                 lastTarget.z = t[2];
-                lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                lastTarget.armorCatglory = allArmor[targetDifferentIndex].armorCatglory;
                 return PredictStatus::NEW;          
             }
             else if(distanceSame < distanceDifferent){
-                Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
+                Eigen::Vector3f t(allArmor[targetSameInex].tx, allArmor[targetSameInex].ty, allArmor[targetSameInex].tz);
                 ReverseRotate(t);
                 lastTarget.x = t[0];
                 lastTarget.y = t[1];
                 lastTarget.z = t[2];
-                lastTarget.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                lastTarget.armorCatglory = allArmor[targetSameInex].armorCatglory;
                 return PredictStatus::NEW;
             }
             return  PredictStatus::NONE;
         }
 
+#ifdef SHOW_IMAGE
+        std::cout<<"select Catglory"<<std::endl;
+#endif
+
         if(distanceSame != 0xffff && distanceSame < Constants::RangeOfCorrect){
-            lastTarget.x = allArmor[distanceSame].tx;
-            lastTarget.y = allArmor[distanceSame].ty;
-            lastTarget.z = allArmor[distanceSame].tz;
+            lastTarget.x = allArmor[targetSameInex].tx;
+            lastTarget.y = allArmor[targetSameInex].ty;
+            lastTarget.z = allArmor[targetSameInex].tz;
             return PredictStatus::FIND;
         }
         else if(distanceDifferent != 0xffff){
@@ -548,12 +573,12 @@ PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const uns
                 return PredictStatus::UNCLEAR;
             }
             else{
-                Eigen::Vector3f t(allArmor[distanceDifferent].tx, allArmor[distanceDifferent].ty, allArmor[distanceDifferent].tz);
+                Eigen::Vector3f t(allArmor[targetDifferentIndex].tx, allArmor[targetDifferentIndex].ty, allArmor[targetDifferentIndex].tz);
                 ReverseRotate(t);
                 target.x = t[0];
                 target.y = t[1];
                 target.z = t[2];
-                target.armorCatglory = allArmor[distanceDifferent].armorCatglory;
+                target.armorCatglory = allArmor[targetDifferentIndex].armorCatglory;
                 return PredictStatus::NEW;                
             }
         }
