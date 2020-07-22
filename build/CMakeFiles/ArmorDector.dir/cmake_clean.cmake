@@ -5,6 +5,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/ArmorDector.dir/src/ImageProcess.cpp.o"
   "CMakeFiles/ArmorDector.dir/src/KalmanFilter.cpp.o"
   "CMakeFiles/ArmorDector.dir/src/main.cpp.o"
+  "CMakeFiles/ArmorDector.dir/src/Prediction.cpp.o"
   "CMakeFiles/ArmorDector.dir/src/Serial.cpp.o"
   "ArmorDector.pdb"
   "ArmorDector"

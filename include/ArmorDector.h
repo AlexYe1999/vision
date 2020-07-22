@@ -5,9 +5,12 @@
 #include<Eigen/Core>
 #include<Eigen/Dense>
 #include"ImageProcess.h"
-#include"KalmanFilter.h"
+#include"Prediction.h"
 #include"Constant.h"
+#include"Serial.h"
 using namespace Robomaster;
+using namespace Robomaster;
+class Prediction;
 
 //装甲信息
 /**
@@ -29,16 +32,6 @@ public:
     //float yaw = 0;      //yaw 轴偏差角度
     //float distance = 0; //实际距离
     ArmorData():armorCatglory(ArmorCatglory::SMALL),tx(0),ty(0),tz(0){};
-};
-
-//目标信息
-class Target{
-public:  
-    float x;
-    float y;
-    float z;
-    ArmorCatglory armorCatglory;
-    Target():x(0),y(0),z(0){}
 };
 
 class RuneData{
@@ -80,7 +73,10 @@ public:
     ~ArmorDector() = default;
 
 public:
-    bool StartProc(const cv::Mat& frame, cv::Point2f& aimPos); //开始
+    void ConfigureParam(ReceivedData & data);
+    bool StartProc(const cv::Mat& frame, Eigen::Vector3f& angle); //开始
+    void ConfigureData(VisionData &data,const Eigen::Vector3f &vec);
+
     void SetMode(volatile Mode& tMode);
     Mode GetMode() const;
     void SetAngle(Struct::Angle& latestAngle);
@@ -121,18 +117,17 @@ private:
     }
 
 private:
-    unsigned int frameCount;
+    unsigned int lostCount;
 
 private:
-    unsigned short level;
     Mode mode;
-    PredictStatus predictStatus;
+    unsigned short level;
     float bulletVelocity;
-
+    
 private:
+    PredictStatus predictStatus;
     unsigned short lostTarget;
     bool isFindtarget;
-    float startDegree;
     Struct::Angle latestAngle;
     Target lastTarget;
     Target target;

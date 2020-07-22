@@ -34,6 +34,7 @@ set(CPP_SOURCES
         src/ImageProcess.cpp
         src/KalmanFilter.cpp               
         src/main.cpp 
+        src/Prediction.cpp
         src/Serial.cpp
     )
 

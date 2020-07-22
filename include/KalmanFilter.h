@@ -6,7 +6,7 @@
 #include<Eigen/Dense>
 #include<eigen3/Eigen/Eigen>
 #include<ctime>
-#include"ArmorDector.h"
+#include"Constant.h"
 
 /**
  * @brief:卡尔曼滤波
@@ -39,23 +39,6 @@ private:
     Eigen::Matrix<float, 3,3> F;//状态转移矩阵
     Eigen::Matrix<float, 3,3> Q;//状态转移协方差矩阵
 
-};
-
-
-class Prediction{
-public:
-    Prediction();
-    void init3D(Target &vec);
-    Eigen::Vector3f predict3D(Target &vec, float & velocity);
-    Eigen::Vector3f predictNotarget3D(float & velocity);
-
-private:
-    KalmanFiler X;
-    KalmanFiler Y;
-    KalmanFiler Z;
-    Eigen::Vector3f Xstate;
-    Eigen::Vector3f Ystate;
-    Eigen::Vector3f Zstate;
 };
 
 #endif // KALMAN_H

@@ -1,6 +1,6 @@
 #ifndef CONSTANTS
 #define CONSTANTS
-
+#include<opencv2/opencv.hpp>
 namespace Robomaster{
 
 //射击模式
@@ -80,18 +80,28 @@ static const float ArmorMinRatio = 0.55;
 //最大长宽比
 static const float ArmorMaxRatio = 6.0; 
 
-//炮口相对于摄像头的位置
-//炮口补偿系数X轴
-static const float CompensationFactor_X = 0.0;
-//炮口补偿系数Y轴
-static const float CompensationFactor_Y = 0.0;
-//炮口补偿系数Z轴
-static const float CompensationFactor_Z = 0.0;
+
 
 //目标确定为同一个的距离最大值
 static const unsigned int RangeOfCorrect = 30;
 
+static const unsigned int RangeOfShoot = 5;
 //----------------------------固定参数---------------------------------
+
+static const float shootVelocityLevel_0 = 8;
+static const float shootVelocityLevel_1 = 10;
+static const float shootVelocityLevel_2 = 13;
+static const float shootVelocityLevel_3 = 28;
+
+//摄像头相对于轴心的位置
+//炮口补偿系数X轴
+static const float CompensationFactor_X = 0.0;
+//炮口补偿系数Y轴
+static const float CompensationFactor_Y = 4.5;
+//炮口补偿系数Z轴
+static const float CompensationFactor_Z = 14.5;
+
+//弧度
 static const float Radian = 3.1415926/180;
 
 //大装甲实际大小
@@ -108,18 +118,17 @@ static const float rRuneHeight = 18;
 
 //相机内参
 static const cv::Mat caremaMatrix_shoot = (
-        cv::Mat_<float>(3, 3) << 551.970868069617,                  0,                         284.76515239942,
-                                                        0,                                     556.4765508954762,   222.9835560041011,
+        cv::Mat_<float>(3, 3) << 648.4910,                  0,                         328.2316,
+                                                        0,                                     652.0198,         254.6992,
                                                         0,                                     0,                                          1
                                   );
     //畸变参数
 static const cv::Mat distCoeffs_shoot = (
-        cv::Mat_<float>(1, 5) <<0.04760243776165584, 
-                                                        0.1371021877165124,
-                                                        -0.006992691809219883,
-                                                        -0.01188182539246532,
-                                                        -0.4361923502166259);  
-
+        cv::Mat_<float>(1, 5) <<-0.2515, 
+                                                        0.2977,
+                                                        0,
+                                                        0,
+                                                        0);  
 }
 
 
@@ -140,26 +149,21 @@ struct Angle{
 };
 
 
-
 }
 
-/**
-* @brief:数据类型
-*/
 namespace Class{
 
-/**
- * @brief 交换数据块
- * @param 
- * @param 
- */
-class ExchangeData{
-    float pitch;
-    float yaw;
+    //目标信息
+class Target{
+public:  
+    float x;
+    float y;
+    float z;
+    ArmorCatglory armorCatglory;
+    Target():x(0),y(0),z(0){}
 };
-
-
 }
+
 
 }
 

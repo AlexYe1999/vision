@@ -1,3 +1,5 @@
+
+#include<mutex>
 #include"Serial.h"
 #include"CRC_Check.h"
 #include"ImageProcess.h"
@@ -5,28 +7,34 @@
 using namespace Robomaster;
 
 extern ProcState procState;
+extern std::mutex exchangeMutex; //数据交换锁
+//extern Mode tMode;
+//交换数据
+extern VisionData visionData;
+extern ReceivedData recivedData;
 
-extern Mode tMode;
+Serial::Serial():
+    portNum(0),
+    fd(open("/dev/ttyUSB0",O_RDWR | O_NOCTTY | O_NONBLOCK))
+{}
+
 
 int Serial::paraReceiver(){
-    const int fd = open("/dev/ttyUSB0",O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if(fd == -1){
-        exit(0);
-    }
-
+    if(fd == -1) exit(0);
     ConfigurePort();
-
     while(1){       
 
-        static ReceivedData flag;
-        ReciveData(flag);
+        exchangeMutex.lock();
+        ReciveData(recivedData);
+        exchangeMutex.unlock();
 
         if(procState == ProcState::FINISHED){
             procState = ProcState::ISPROC;
-            SendData(target);             //发送数据
+            SendData(visionData);             //发送数据
         }
 
     }
+    
     close(fd);
 
 }
@@ -81,7 +89,7 @@ int Serial::ConfigurePort(){
 *          send_bytes[5] pitch符号位
 *          send_bytes[6]--send_bytes[9]为yaw数据
 *          send_bytes[10]  yaw符号位
-*          send_bytes[11] 是否监测到
+*          send_bytes[11]是否监测到
 *          send_bytes[12]距离
 *          send_bytes[13]打弹
 *          send_bytes[14]-[15]校验
@@ -96,6 +104,7 @@ void Serial::SendData(VisionData & data)
     else{
         pitch_bit_ = 0x01;
     }
+
     if(data.yawData.f<0){
         yaw_bit_ = 0x00;
         data.yawData.f=-data.yawData.f;
@@ -103,7 +112,7 @@ void Serial::SendData(VisionData & data)
     else{
             yaw_bit_ = 0x01;
         }
-    send_bytes[0] = 0xFF;
+    send_bytes[0] = 0xff;
 
     send_bytes[1] = data.pitchData.uc[0];
     send_bytes[2] = data.pitchData.uc[1];
@@ -117,9 +126,10 @@ void Serial::SendData(VisionData & data)
     send_bytes[9] = data.yawData.uc[3];
     send_bytes[10] = yaw_bit_;
 
-    //send_bytes[12] = data.distance;
-    send_bytes[12] = data.shoot;
-    send_bytes[13] = data.IsHaveArmor;
+    send_bytes[11] = data.IsHaveArmor;    
+    send_bytes[12] = data.distance;
+    send_bytes[13] = data.shoot;
+
 
     Append_CRC16_Check_Sum(send_bytes, 16);
 
@@ -135,7 +145,7 @@ void Serial::SendData(VisionData & data)
 *   @brief:串口PC端接收
 *   @param:
 *          send_bytes[0] 0xff 
-*          send_bytes[1]--send_bytes[4]为pitch数据 
+*          send_bytes[1]--send_bytes[4]为pitch数据
 *          send_bytes[5] pitch符号位
 *          send_bytes[6]--send_bytes[9]为yaw数据
 *          send_bytes[10]  yaw符号位
@@ -147,10 +157,26 @@ void Serial::ReciveData(ReceivedData & data){
     int bytes;
     ioctl(portNum, FIONREAD, &bytes);
     if(bytes == 0) return;
-    bytes = read(portNum,rec_bytes,6);
-    if(rec_bytes[0] = 0xaa){
-        data.mode  = (int)rec_bytes[1];
-        data.status = (int)rec_bytes[3];
+
+    bytes = read(portNum,rec_bytes,13);
+
+    if(rec_bytes[0] == 0xff && rec_bytes[12] == 0xff){
+        data.pitch.uc[0] = rec_bytes[0];
+        data.pitch.uc[1] = rec_bytes[1];
+        data.pitch.uc[2] = rec_bytes[2];
+        data.pitch.uc[3] = rec_bytes[3];
+        if(rec_bytes[5] == 0x00){
+            data.pitch.f *= -1.0;
+        }
+        data.yaw.uc[0] = rec_bytes[6];
+        data.yaw.uc[1] = rec_bytes[7];
+        data.yaw.uc[2] = rec_bytes[8];      
+        data.yaw.uc[3] = rec_bytes[9];
+        if(rec_bytes[10] == 0x00){
+            data.yaw.f *= -1.0;
+        }
+
+        data.level = rec_bytes[11];
     }
 
     ioctl(portNum, FIONREAD, &bytes);
@@ -158,5 +184,6 @@ void Serial::ReciveData(ReceivedData & data){
     if(bytes>0){
         read(portNum,rec_bytes,bytes);
     }
+
 }
 

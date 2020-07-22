@@ -2,13 +2,16 @@
 #include<Eigen/Core>
 #include<Eigen/Dense>
 #include<eigen3/Eigen/Eigen>
+#include<sstream>
 #include"ArmorDector.h"
 #include"Constant.h"
 #include"KalmanFilter.h"
 #include"Debug.h"
+#include"Serial.h"
 using namespace Robomaster;
 
 #ifdef SHOW_IMAGE
+std::ostringstream string;
 extern cv::Mat Rune;
 #endif
 
@@ -17,19 +20,38 @@ ArmorDector::ArmorDector():
     predictStatus (PredictStatus::NONE),
     lostTarget(0),
     isFindtarget(0),
-    startDegree(0.0),
     lastTarget(),
     target(),
     latestAngle(),
     Myaw(),
     Mpitch(),
-    frameCount(0),
+    lostCount(0),
     level(0),
     predict(),
     bulletVelocity(8)
 {}
 
-
+void ArmorDector::ConfigureParam(ReceivedData & data){
+    latestAngle.yaw = data.yaw.f;
+    latestAngle.pitch = data.pitch.f;
+    level = static_cast<unsigned int>(data.level);
+    switch (level){
+        case 0x00:{
+            bulletVelocity = Constants::shootVelocityLevel_0*100.0f;
+        }break;
+        case 0x01:{
+            bulletVelocity = Constants::shootVelocityLevel_1*100.0f;
+        }
+        case 0x02:{
+            bulletVelocity = Constants::shootVelocityLevel_2*100.0f;
+        }break;
+        case 0x03:{
+            bulletVelocity = Constants::shootVelocityLevel_3*100.0f;
+        }break;
+        default:{
+        }break;
+    }
+}
 /**
  *@brief 设置射击模式 
  */
@@ -62,15 +84,13 @@ void ArmorDector::SetAngle(Struct::Angle& latestAngle){
  * @param aimPos 射击点
  * @return 是否成功
  */
-bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
+bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
     switch(mode){
         case Mode::Armor:{
             GetArmorData(frame);
             break;
         }
         case Mode::Rune:{
-
-
             break;
         }
         default:
@@ -80,26 +100,63 @@ bool ArmorDector::StartProc(const cv::Mat & frame, cv::Point2f & aimPos){
     switch(predictStatus)   {
         case PredictStatus::NEW:{
             predict.init3D(target);
+            isFindtarget = true;
         }break;
         case  PredictStatus::FIND:{
-            predict.predict3D(lastTarget, bulletVelocity);
+            angle = predict.predict3D(lastTarget, bulletVelocity);
+            isFindtarget = true;
         }break;
         case PredictStatus::UNCLEAR:{
-            predict.predictNotarget3D(bulletVelocity);
+            angle = predict.predictNotarget3D(bulletVelocity);
+            isFindtarget = true;
         }break;
         case PredictStatus::NONE:{
+            lostCount++;
+            isFindtarget = false;
         }break;
         default:{
         }break;
     }
 
+    Rotate(angle);
+    float distance;
+    float yaw;
+    float pitch;
+    distance = static_cast<char>(sqrt(angle[0]*angle[0]+angle[1]*angle[1]+angle[2]*angle[2])/100);
+    yaw = atan2(angle[0],angle[2])/Constants::Radian;
+    pitch = atan2(angle[1],angle[2])/Constants::Radian;
+
+#ifdef SHOW_IMAGE
+
+    string<<"pitch: "<< pitch<<"\nyaw: "<<yaw<<"\ndistance: "<<distance<<std::endl;
+
+    cv::putText(Rune,string.str(),cv::Point(20,20),CV_FONT_HERSHEY_SIMPLEX,2,cv::Scalar(0,0,255),1,8);
+    cv::imshow("All Armor",Rune);
+    cv::waitKey(1);
+
+#endif
+}
+
+void ArmorDector::ConfigureData(VisionData &data,const Eigen::Vector3f &vec){
+    data.pitchData.f = vec[0];
+    data.yawData.f = vec[1];
+    data.distance = static_cast<char>(vec[2]);
+    if(isFindtarget == true){
+        data.IsHaveArmor = 0x01;
+    }
+    if(vec[0] < Constants::RangeOfShoot && vec[1] < Constants::RangeOfShoot){
+        data.shoot = true;
+    }
+    else{
+        data.shoot = false;
+    }
 }
 
 /**
  * @brief 伽马值评估
  * 
  */
-void GetGamma(){
+void ArmorDector::GetGamma(){
 
 
 
@@ -111,7 +168,7 @@ void GetGamma(){
  * @brief 伽马变换
  * 
  */
-void GammaTransf(){
+void ArmorDector::GammaTransf(){
 
 
 
@@ -319,19 +376,15 @@ unsigned short ArmorDector::CombinateLED(LedData ledArray[], ArmorData armorArra
     }
 
 #ifdef SHOW_IMAGE
-    cv::namedWindow("All Aromr");
-    cv::Mat a = Rune.clone();
     for(int i = 0;i < armorSize;i++){
         for(int i = 0;i < 4;i++){
-            cv::line(a,armorArray[i].leftLed[0],armorArray[i].leftLed[1],cv::Scalar(0,0,255),1,8);
-            cv::line(a,armorArray[i].rightLed[0],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
-            cv::line(a,armorArray[i].leftLed[0],armorArray[i].rightLed[0],cv::Scalar(0,0,255),1,8);
-            cv::line(a,armorArray[i].leftLed[1],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
+            cv::line(Rune,armorArray[i].leftLed[0],armorArray[i].leftLed[1],cv::Scalar(0,0,255),1,8);
+            cv::line(Rune,armorArray[i].rightLed[0],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
+            cv::line(Rune,armorArray[i].leftLed[0],armorArray[i].rightLed[0],cv::Scalar(0,0,255),1,8);
+            cv::line(Rune,armorArray[i].leftLed[1],armorArray[i].rightLed[1],cv::Scalar(0,0,255),1,8);
         }
     }
-    std::cout<<"Aromor Count:"<<armorSize<<"\n";
-    cv::imshow("All Aromr",a);
-    cv::waitKey(1);
+    string<<"Aromor Count: "<<armorSize<<"\n";
 #endif
 
     return armorSize;
@@ -422,7 +475,7 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
 
     armor.tx = static_cast<float>(tx)-Constants::CompensationFactor_X;
     armor.ty = static_cast<float>(ty)-Constants::CompensationFactor_Y;
-    armor.tz = static_cast<float>(tz)-Constants::CompensationFactor_Z;
+    armor.tz = static_cast<float>(tz)+Constants::CompensationFactor_Z;
 
 }
 

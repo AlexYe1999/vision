@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/yeahoo/桌面/LowEquiped/src/DahengCamera.cpp" "/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir/src/DahengCamera.cpp.o"
   "/home/yeahoo/桌面/LowEquiped/src/ImageProcess.cpp" "/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir/src/ImageProcess.cpp.o"
   "/home/yeahoo/桌面/LowEquiped/src/KalmanFilter.cpp" "/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir/src/KalmanFilter.cpp.o"
+  "/home/yeahoo/桌面/LowEquiped/src/Prediction.cpp" "/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir/src/Prediction.cpp.o"
   "/home/yeahoo/桌面/LowEquiped/src/Serial.cpp" "/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir/src/Serial.cpp.o"
   "/home/yeahoo/桌面/LowEquiped/src/main.cpp" "/home/yeahoo/桌面/LowEquiped/build/CMakeFiles/ArmorDector.dir/src/main.cpp.o"
   )

@@ -30,24 +30,22 @@ union float2uchar{
 struct VisionData{
     float2uchar pitchData;
     float2uchar yawData;
-    float2uchar distance;    
-    unsigned char IsHaveArmor;
-    unsigned char shoot;
+    char distance;
+    char IsHaveArmor;
+    char shoot;
 };
 
 /*
 * @brief:接收机器人数据的结构体
-* @param: mode    机器人所处的模式
+* @param: level    机器人所处的模式
 *  @param:status   机器人等级
-*  @param:delta_yawl 两帧差
-* @param:delta_pitch 两帧角度差
+*  @param:yawl
+* @param:pitch
 */ 
 struct ReceivedData{
-    int mode;
-    int status;
-    int shootRate;
-    float delta_yaw;
-    float delta_pitch;
+    char level;
+    float2uchar yaw;
+    float2uchar pitch;
 };
 
 //
@@ -63,18 +61,9 @@ public:
  * 
  */
 class Serial{
-private:
-
-    const char *const PortName = "/dev/ttyUSB0"; //端口名
-    int portNum = 0;
-    unsigned char rec_bytes[255];
-    unsigned char send_bytes[14];
-    unsigned char pitch_bit_;
-    unsigned char yaw_bit_;
-    ReceivedData flag;
-    VisionData target;
 
 public:
+    Serial();
     int paraReceiver();
 
 private:
@@ -83,9 +72,15 @@ private:
     void SendData(VisionData & data);
     void ReciveData(ReceivedData & data);
 
-public:
-    void ExchangeParam();
+private:
 
+    const char *const PortName = "/dev/ttyUSB0"; //端口名
+    int portNum;
+    int fd;
+    unsigned char rec_bytes[255];
+    unsigned char send_bytes[14];
+    unsigned char pitch_bit_;
+    unsigned char yaw_bit_;
 };
 
 

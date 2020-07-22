@@ -8,16 +8,17 @@ using namespace Robomaster;
 
 //------------------------------全局变量--------------------------------------
 
-volatile Mode tMode = Mode::Armor;
+std::mutex exchangeMutex; //数据交换锁
 volatile ProcState procState = ProcState::ISPROC;
-
-volatile Class::ExchangeData exchangeData;
 
 //图片缓冲
 cv::Mat MatBuffer[5];
 volatile int64_t MatRear = 0;
 volatile int64_t MatFront = 0;
-Struct::Angle AngleBuffer;
+
+//交换数据
+VisionData visionData;
+ReceivedData recivedData;
 
 //---------------------------------------------------------------------------------
 #ifdef SHOW_IMAGE
@@ -118,7 +119,7 @@ initCamera:
             }
         }
 
-        switch(tMode){  //射击模式
+        switch(Mode::Armor){  //射击模式
             case Mode::Armor:{
                 Camera.GetMat(MatBuffer[MatRear%5]);
                 MatRear++;
@@ -132,17 +133,6 @@ initCamera:
                 break;
             } 
         }
-
-#ifdef Calibration
-    char key = cv::waitKey(1);
-    if(key == ' '){
-        char VideoFile[255];
-        std::sprintf(VideoFile, "../image/%d.jpg",CMAT_COUNT);
-        cv::imwrite(VideoFile,MatBuffer[(MatRear-1)%5]);
-        CMAT_COUNT++;
-    }
-#endif
-
         cv::imshow("Exposure Adjust",MatBuffer[(MatRear-1)%5]);
         cv::waitKey(1);
 #ifdef TIME_COST
@@ -179,7 +169,7 @@ initCamera:
 void ImageProcess::ImageConsumer(){
 
     ArmorDector armorDector;
-    cv::Point2f aimPos;
+    Eigen::Vector3f angle;
     cv::Mat srcFrame;
 
 #ifdef TIME_COST 
@@ -202,18 +192,17 @@ void ImageProcess::ImageConsumer(){
         Rune = srcFrame.clone();
 #endif
 
-        armorDector.SetMode(tMode);
-        armorDector.SetAngle(AngleBuffer);
+        exchangeMutex.lock();
+        armorDector.ConfigureParam(recivedData);
+        exchangeMutex.unlock();
 
         procState = ProcState::ISPROC;
-
-
         //if(!armorDector.StartProc(srcFrame, aimPos)) continue;
-        armorDector.StartProc(srcFrame, aimPos);
+        armorDector.StartProc(srcFrame, angle);
         //填数
-
+        armorDector.ConfigureData(visionData, angle);
+        //发数        
         procState = ProcState::FINISHED;
-        //发数
 
 
 #ifdef TIME_COST
