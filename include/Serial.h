@@ -63,11 +63,16 @@ public:
 class Serial{
 
 public:
-    Serial();
-    int paraReceiver();
+    void paraReceiver();
+};
 
-private:
-    int OpenPort(); //打开串口
+
+class Port{
+
+public:
+    int fd;
+    Port();
+    void OpenPort(); //打开串口
     int ConfigurePort();
     void SendData(VisionData & data);
     void ReciveData(ReceivedData & data);
@@ -76,11 +81,11 @@ private:
 
     const char *const PortName = "/dev/ttyUSB0"; //端口名
     int portNum;
-    int fd;
     unsigned char rec_bytes[255];
     unsigned char send_bytes[14];
     unsigned char pitch_bit_;
     unsigned char yaw_bit_;
+
 };
 
 

@@ -146,6 +146,7 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
     pitch = atan2(angle[1],angle[2])/Constants::Radian;
 
 #ifdef SHOW_IMAGE
+    std::cout<<"x: "<<angle[0]<<" y: "<<angle[1]<<" z: "<<angle[2]<<std::endl;
     std::cout <<"pitch: "<<pitch<<"  yaw: "<<yaw<<"  distance: "<<distance<<std::endl;
 #endif
 }

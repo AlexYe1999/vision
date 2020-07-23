@@ -10,7 +10,7 @@ int main(){
 
 #ifndef SERIAL_CLOSE
     Serial serial; //收发数据
-    std::thread t3(&RemoteController::paraReceiver, serial);
+    std::thread t3(&Serial::paraReceiver, serial);
 #endif
 
     t1.join();

@@ -13,56 +13,48 @@ extern std::mutex exchangeMutex; //数据交换锁
 extern VisionData visionData;
 extern ReceivedData recivedData;
 
-Serial::Serial():
-    portNum(0),
-    fd(open("/dev/ttyUSB0",O_RDWR | O_NOCTTY | O_NONBLOCK))
-{}
 
 
-int Serial::paraReceiver(){
-    if(fd == -1) exit(0);
-    ConfigurePort();
-    while(1){       
+void Serial::paraReceiver(){
+    Port port;
+    port.OpenPort();
+    port.ConfigurePort();
+    
+     while(1){       
 
         exchangeMutex.lock();
-        ReciveData(recivedData);
+        port.ReciveData(recivedData);
         exchangeMutex.unlock();
 
         if(procState == ProcState::FINISHED){
             procState = ProcState::ISPROC;
-            SendData(visionData);             //发送数据
+            port.SendData(visionData);             //发送数据
         }
 
     }
     
-    close(fd);
-
+    close(port.fd); 
 }
 
+Port::Port():portNum(0){};
 
 /**
 *   @brief:打开串口
 *   @param  Portname    类型 const char     串口的位置
 */
-int Serial::OpenPort(){
+void Port::OpenPort(){
     
-    portNum = open(PortName, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    while((portNum = open(PortName, O_RDWR | O_NOCTTY | O_NONBLOCK)) == -1);
     
-    if(portNum == -1){
-        printf("The port open error!\n");
-    }
-    else{
-        fcntl(portNum,F_SETFL,0);   //读取串口的信息
-    }
+    fcntl(portNum,F_SETFL,0);   //读取串口的信息
 
-    return portNum;
 }
 
 
 /**
 *   @brief:配置串口,无奇偶校验
 */
-int Serial::ConfigurePort(){
+int Port::ConfigurePort(){
     struct termios PortSetting;
 
     //波特率设置
@@ -95,7 +87,7 @@ int Serial::ConfigurePort(){
 *          send_bytes[14]-[15]校验
 >>>>>>> 47dad157eee92bce1fca6030481f3b2978a34bec
 */
-void Serial::SendData(VisionData & data)
+void Port::SendData(VisionData & data)
 {
     if(data.pitchData.f<0){
         pitch_bit_ = 0x00;
@@ -111,7 +103,7 @@ void Serial::SendData(VisionData & data)
     }
     else{
             yaw_bit_ = 0x01;
-        }
+    }
     send_bytes[0] = 0xff;
 
     send_bytes[1] = data.pitchData.uc[0];
@@ -130,10 +122,10 @@ void Serial::SendData(VisionData & data)
     send_bytes[12] = data.distance;
     send_bytes[13] = data.shoot;
 
-
     Append_CRC16_Check_Sum(send_bytes, 16);
 
     write(portNum, send_bytes, 16);
+    printf("sent: ");
     for(int i=0;i<16;i++){
         printf("%X ",send_bytes[i]);
     }
@@ -152,10 +144,10 @@ void Serial::SendData(VisionData & data)
 *          send_bytes[11] 等级
 *          send_bytes[12] 0xff
 */
-void Serial::ReciveData(ReceivedData & data){
+void Port::ReciveData(ReceivedData & data){
 
     int bytes;
-    ioctl(portNum, FIONREAD, &bytes);
+    ioctl(portNum, FIONREAD, &bytes); //读取串口和受到的字节数
     if(bytes == 0) return;
 
     bytes = read(portNum,rec_bytes,13);
@@ -178,7 +170,10 @@ void Serial::ReciveData(ReceivedData & data){
 
         data.level = rec_bytes[11];
     }
-
+    printf("receive: ");
+    for(int i=0;i < 13;i++){
+        printf("%X ",rec_bytes[i]);
+    }
     ioctl(portNum, FIONREAD, &bytes);
 
     if(bytes>0){

@@ -129,7 +129,22 @@ static const cv::Mat distCoeffs_shoot = (
                                                         0,
                                                         0,
                                                         0);  
-}
+} 
+
+/* //相机内参2
+static const cv::Mat caremaMatrix_shoot = (
+        cv::Mat_<float>(3, 3) << 640.50006,                  0,                         305.09497,
+                                                        0,                                     652.0198,         255.88171,
+                                                        0,                                     0,                                          1
+);
+//畸变参数
+static const cv::Mat distCoeffs_shoot = (
+        cv::Mat_<float>(1, 5) <<-0.22324, 
+                                                        0.19562,
+                                                        -0.00020,
+                                                        0.00282,
+                                                        0);  
+} */
 
 
 /*
