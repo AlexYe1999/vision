@@ -56,9 +56,9 @@ void KalmanFiler::init(float &init){
  * @param deltaTime 时间间隔
  * @return 此刻状态
  */
-Eigen::Vector3f KalmanFiler::predict(float &currentAngle){        
+Eigen::Vector3f KalmanFiler::predict(float &current){        
         K = P_*H/(H.transpose()*P_*H+R);
-        x = x_+K*(currentAngle-H.transpose()*x);
+        x = x_+K*(current-H.transpose()*x);
         P = (E-K*H.transpose())*P_;
         P_ = F*P*F.transpose()+Q;
         x_=F*x;

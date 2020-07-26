@@ -8,6 +8,8 @@
 #include<ctime>
 #include"Constant.h"
 
+
+using namespace Eigen;
 /**
  * @brief:卡尔曼滤波
  */
@@ -16,8 +18,8 @@ public:
     KalmanFiler();
 
     void init(float &init);
-    Eigen::Vector3f predict(float &currentAngle);
-    Eigen::Vector3f predict_notarget();
+    Vector3f predict(float &currentAngle);
+    Vector3f predict_notarget();
 
 
 private:
@@ -29,15 +31,15 @@ private:
 
     float angleYaw;
     float anglePitch;
-    Eigen::Vector3f H;
-    Eigen::Vector3f x;//当前状态
-    Eigen::Vector3f x_;//预测值
-    Eigen::MatrixXf K;//卡尔曼增益
-    Eigen::Matrix<float, 3,3> E;//单位矩阵
-    Eigen::Matrix<float, 3,3> P;//状态协方差
-    Eigen::Matrix<float, 3,3> P_;//预测协方差
-    Eigen::Matrix<float, 3,3> F;//状态转移矩阵
-    Eigen::Matrix<float, 3,3> Q;//状态转移协方差矩阵
+    Vector3f H;
+    Vector3f x;//当前状态
+    Vector3f x_;//预测值
+    MatrixXf K;//卡尔曼增益
+    Matrix<float, 3,3> E;//单位矩阵
+    Matrix<float, 3,3> P;//状态协方差
+    Matrix<float, 3,3> P_;//预测协方差
+    Matrix<float, 3,3> F;//状态转移矩阵
+    Matrix<float, 3,3> Q;//状态转移协方差矩阵
 
 };
 

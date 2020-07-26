@@ -83,7 +83,7 @@ void ArmorDector::SetAngle(Struct::Angle& latestAngle){
  * @param aimPos 射击点
  * @return 是否成功
  */
-bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
+bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & pos){
     switch(mode){
         case Mode::Armor:{
             GetArmorData(frame);
@@ -98,7 +98,7 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
 
     switch(predictStatus)   {
         case PredictStatus::NEW:{
-            predict.init3D(target);
+            predict.init3D(lastTarget);
             isFindtarget = true;
 
 #ifdef SHOW_IMAGE
@@ -107,7 +107,7 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
 
         }break;
         case  PredictStatus::FIND:{
-            angle = predict.predict3D(lastTarget, bulletVelocity);
+            pos = predict.predict3D(lastTarget, bulletVelocity);
             isFindtarget = true;
 
 #ifdef SHOW_IMAGE
@@ -116,7 +116,8 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
 
         }break;
         case PredictStatus::UNCLEAR:{
-            angle = predict.predictNotarget3D(bulletVelocity);
+            lostCount++;
+            pos = predict.predictNotarget3D(bulletVelocity);
             isFindtarget = true;
 
 #ifdef SHOW_IMAGE
@@ -137,17 +138,23 @@ bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & angle){
         }break;
     }
 
-    Rotate(angle);
+    Rotate(pos);
     float distance;
     float yaw;
     float pitch;
-    distance = static_cast<char>(sqrt(angle[0]*angle[0]+angle[1]*angle[1]+angle[2]*angle[2])/100);
-    yaw = atan2(angle[0],angle[2])/Constants::Radian;
-    pitch = atan2(angle[1],angle[2])/Constants::Radian;
+    distance = static_cast<char>(sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100);
+    yaw = atan2(pos[0],pos[2])/Constants::Radian;
+    pitch = atan2(pos[1],pos[2])/Constants::Radian;
 
 #ifdef SHOW_IMAGE
-    std::cout<<"x: "<<angle[0]<<" y: "<<angle[1]<<" z: "<<angle[2]<<std::endl;
-    std::cout <<"pitch: "<<pitch<<"  yaw: "<<yaw<<"  distance: "<<distance<<std::endl;
+    std::cout<<"px: "<<pos[0]<<" py: "<<pos[1]<<" pz: "<<pos[2]<<std::endl;
+    std::cout <<"yaw: "<<yaw<<" pitch: "<<pitch<<" distance: "<<distance<<std::endl;
+    char text[255];
+    sprintf(text,"x: %.2f   y: %.2f   z: %.2f",pos[0],pos[1],pos[2]);
+    cv::putText(Rune,text,cv::Point(10,10),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
+    sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f",yaw,pitch,distance);
+    cv::putText(Rune,text,cv::Point(10,30),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
+
 #endif
 }
 
@@ -447,10 +454,10 @@ inline void ArmorDector::get3dPointData(const ArmorData & armor, std::vector<cv:
             break;
     }
 
-    point3D.push_back(cv::Point3f(-fHalfX,-fHalfY, 0.0));
-    point3D.push_back(cv::Point3f(fHalfX,-fHalfY, 0.0));
-    point3D.push_back(cv::Point3f(fHalfX,fHalfY, 0.0));
     point3D.push_back(cv::Point3f(-fHalfX,fHalfY, 0.0));
+    point3D.push_back(cv::Point3f(fHalfX,fHalfY, 0.0));
+    point3D.push_back(cv::Point3f(fHalfX,-fHalfY, 0.0));
+    point3D.push_back(cv::Point3f(-fHalfX,-fHalfY, 0.0));
 
 }
 
@@ -465,7 +472,7 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
     switch(mode){
         case Mode::Armor:
         {
-            //!大能量机关
+           //!辅助射击
             cv::Mat caremaMatrix = Constants::caremaMatrix_shoot;
             cv::Mat distCoeffs = Constants::distCoeffs_shoot;
             cv::solvePnP(point3D, point2D, caremaMatrix, distCoeffs, rvecs, tvecs);  //解算x，y，z 三轴偏移量
@@ -476,13 +483,13 @@ void ArmorDector::solveAngle(ArmorData & armor, const std::vector<cv::Point3f>& 
 
         }
         case Mode::Rune:{
-            //!辅助射击
+            //!大能量机关
             cv::Mat caremaMatrix = Constants::caremaMatrix_shoot;
             cv::Mat distCoeffs = Constants::distCoeffs_shoot;
             cv::solvePnP(point3D, point2D, caremaMatrix, distCoeffs, rvecs, tvecs);
 
             tx = tvecs.ptr<double>(0)[0];
-            ty = tvecs.ptr<double>(0)[1];
+            ty = -tvecs.ptr<double>(0)[1];
             tz = tvecs.ptr<double>(0)[2];
 
         }
@@ -544,6 +551,7 @@ PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const uns
                 lastTarget.y = t[1];
                 lastTarget.z = t[2];
                 lastTarget.armorCatglory = allArmor[targetDifferentIndex].armorCatglory;
+                //target = lastTarget;
                 return PredictStatus::NEW;          
             }
             else if(distanceSame < distanceDifferent){
@@ -553,9 +561,12 @@ PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const uns
                 lastTarget.y = t[1];
                 lastTarget.z = t[2];
                 lastTarget.armorCatglory = allArmor[targetSameInex].armorCatglory;
+                //target = lastTarget;
                 return PredictStatus::NEW;
             }
-            return  PredictStatus::NONE;
+            else{
+                return  PredictStatus::NONE;                
+            }
         }
 
 #ifdef SHOW_IMAGE
@@ -563,23 +574,28 @@ PredictStatus ArmorDector::selectBestArmor(const ArmorData allArmor[], const uns
 #endif
 
         if(distanceSame != 0xffff && distanceSame < Constants::RangeOfCorrect){
-            lastTarget.x = allArmor[targetSameInex].tx;
-            lastTarget.y = allArmor[targetSameInex].ty;
-            lastTarget.z = allArmor[targetSameInex].tz;
+            Eigen::Vector3f t(allArmor[targetSameInex].tx, allArmor[targetSameInex].ty, allArmor[targetSameInex].tz);
+            ReverseRotate(t);
+/*             target.x = allArmor[targetSameInex].tx;
+            target.y = allArmor[targetSameInex].ty;
+            target.z = allArmor[targetSameInex].tz; */
+            lastTarget.x = t[0];
+            lastTarget.y = t[1];
+            lastTarget.z = t[2];
             return PredictStatus::FIND;
         }
         else if(distanceDifferent != 0xffff){
             if(isFindtarget && lostTarget < Constants::LostRange){
-                lostTarget++;                
+                lostTarget++;
                 return PredictStatus::UNCLEAR;
             }
             else{
                 Eigen::Vector3f t(allArmor[targetDifferentIndex].tx, allArmor[targetDifferentIndex].ty, allArmor[targetDifferentIndex].tz);
                 ReverseRotate(t);
-                target.x = t[0];
-                target.y = t[1];
-                target.z = t[2];
-                target.armorCatglory = allArmor[targetDifferentIndex].armorCatglory;
+                lastTarget.x = t[0];
+                lastTarget.y = t[1];
+                lastTarget.z = t[2];
+                lastTarget.armorCatglory = allArmor[targetDifferentIndex].armorCatglory;
                 return PredictStatus::NEW;                
             }
         }

@@ -152,7 +152,7 @@ void Port::ReciveData(ReceivedData & data){
 
     bytes = read(portNum,rec_bytes,13);
 
-    if(rec_bytes[0] == 0xff && rec_bytes[12] == 0xff){
+    if(rec_bytes[0] == 0xaa && rec_bytes[12] == 0xbb){
         data.pitch.uc[0] = rec_bytes[0];
         data.pitch.uc[1] = rec_bytes[1];
         data.pitch.uc[2] = rec_bytes[2];
@@ -170,10 +170,11 @@ void Port::ReciveData(ReceivedData & data){
 
         data.level = rec_bytes[11];
     }
-    printf("receive: ");
+/*     printf("receive: ");
     for(int i=0;i < 13;i++){
         printf("%X ",rec_bytes[i]);
     }
+    std::cout<<std::endl; */
     ioctl(portNum, FIONREAD, &bytes);
 
     if(bytes>0){

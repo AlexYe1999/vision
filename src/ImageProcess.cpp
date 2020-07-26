@@ -24,9 +24,6 @@ ReceivedData recivedData;
 #ifdef SHOW_IMAGE
 cv::Mat Rune;
 #endif
-#ifdef Calibration
-unsigned int CMAT_COUNT = 1;
-#endif
 
 
 
@@ -80,7 +77,7 @@ initCamera:
     Camera.SetResolution();
     while(!Camera.StreamOn());
     Camera.SetExposureTime();
-    //设置曝光增益000
+    //设置曝光增益
     Camera.SetGain();
     //设置是否自动白平衡
     Camera.Set_BALANCE_AUTO(0);
@@ -133,8 +130,9 @@ initCamera:
                 break;
             } 
         }
+#ifndef COMPETITION_ON
         cv::imshow("Exposure Adjust",MatBuffer[(MatRear-1)%5]);
-        cv::waitKey(1);
+#endif
 #ifdef TIME_COST
         std::cout<<"product time:"<<static_cast<double>((cv::getTickCount() - tick)*1000/cv::getTickFrequency())<<" ms\n";
 #endif    
@@ -183,7 +181,7 @@ void ImageProcess::ImageConsumer(){
 #endif
 
 
-        while(MatRear <= MatFront+1);
+        while(MatRear <= MatFront+1 && MatRear < 2);
         MatFront = MatRear;
 
         srcFrame = MatBuffer[(MatFront-1)%5].clone();

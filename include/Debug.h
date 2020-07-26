@@ -3,7 +3,7 @@
 #ifndef COMPETITION_ON
 
 //-------------------------------------------------------------------------
-#define SERIAL_CLOSE //串口关闭
+//#define SERIAL_CLOSE //串口关闭
 #define CAMERA_ON //相机打开
 //#define RECORD //录像
 

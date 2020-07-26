@@ -1,5 +1,5 @@
 #include <Prediction.h>
-
+#include"Debug.h"
 
 Prediction::Prediction():
         X(),
@@ -25,10 +25,17 @@ Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity){
         float b = Xstate[0]*Xstate[1] + Ystate[0]*Ystate[1] + Zstate[0]*Zstate[1];
         float c = Xstate[0]*Xstate[0] + Ystate[0]*Ystate[0] + Zstate[0]*Zstate[0];
         t = (-b+sqrt(b*b-4*a*c))/(2*a);
+
+#ifdef SHOW_IMAGE
+        std::cout<<"delta: "<< t <<std::endl;
+        std::cout<<"X: "<<Xstate<<std::endl;
+        std::cout<<"Y: "<<Ystate<<std::endl;
+        std::cout<<"Z: "<<Zstate<<std::endl; 
+#endif
+
         tx = Xstate[0]+t*Xstate[1];
         ty = Ystate[0]+t*Ystate[1];
         tz = Zstate[0]+t*Zstate[1];
-        
         return Eigen::Vector3f(tx ,ty, tz);
 }
 Eigen::Vector3f Prediction::predictNotarget3D(float & velocity){
@@ -40,6 +47,14 @@ Eigen::Vector3f Prediction::predictNotarget3D(float & velocity){
         float b = Xstate[0]*Xstate[1] + Ystate[0]*Ystate[1] + Zstate[0]*Zstate[1];
         float c = Xstate[0]*Xstate[0] + Ystate[0]*Ystate[0] + Zstate[0]*Zstate[0];
         t = (-b+sqrt(b*b-4*a*c))/(2*a);
+
+#ifdef SHOW_IMAGE
+        std::cout<<"delta: "<< t <<std::endl;
+        std::cout<<"X: "<<Xstate<<std::endl;
+        std::cout<<"Y: "<<Ystate<<std::endl;
+        std::cout<<"Z: "<<Zstate<<std::endl; 
+#endif
+        
         tx = Xstate[0]+t*Xstate[1];
         ty = Ystate[0]+t*Ystate[1];
         tz = Zstate[0]+t*Zstate[1];
