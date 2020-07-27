@@ -29,8 +29,6 @@ private:
     const float p;//初始化时初始位置误差的平方
     const float t;//时间间隔
 
-    float angleYaw;
-    float anglePitch;
     Vector3f H;
     Vector3f x;//当前状态
     Vector3f x_;//预测值

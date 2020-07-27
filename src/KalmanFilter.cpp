@@ -4,13 +4,11 @@
  * @brief:构造函数
  */
 KalmanFiler::KalmanFiler()
-        :R(10),
+        :R(100),
         R_p(9),
         q(25),
-        p(25),
+        p(2500),
         t(0.01),
-        angleYaw(0),
-        anglePitch(0),
         H(Eigen::Vector3f(1.0,0.0,0.0)),
         x(Eigen::Vector3f::Ones()),
         x_(Eigen::Vector3f::Ones()),

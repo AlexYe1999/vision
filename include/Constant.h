@@ -85,23 +85,29 @@ static const unsigned int LostRange = 43;
 static const unsigned int LostCountBuffer = 30;
 
 //目标确定为同一个的距离最大值
-static const unsigned int RangeOfCorrect = 500;
+static const unsigned int RangeOfCorrect = 300;
 //射击角度
-static const unsigned int RangeOfShoot = 5;
-//----------------------------固定参数---------------------------------
+static const unsigned int RangeOfShoot = 50;
+//----------------------------固定参数-----------------------50----------
 
-static const float shootVelocityLevel_0 = 8;
+static const float shootVelocityLevel_0 = 20;
 static const float shootVelocityLevel_1 = 10;
 static const float shootVelocityLevel_2 = 13;
 static const float shootVelocityLevel_3 = 28;
 
 //摄像头相对于轴心的位置
 //炮口补偿系数X轴
-static const float CompensationFactor_X = 0.0;
+static const float CompensationFactor_X = 0.0f;
 //炮口补偿系数Y轴
-static const float CompensationFactor_Y = 4.5;
+static const float CompensationFactor_Y = 7.0f;
 //炮口补偿系数Z轴
-static const float CompensationFactor_Z = 14.5;
+static const float CompensationFactor_Z = 14.5f;
+//处理时间补偿
+static const float CompensationFactor_Proc = 0.018f;
+//加速度一半
+static const float CompensationFactor_Half_Accelarate = 490.0f;
+//云台高度
+static const float Height_PAN =  0;
 
 //弧度
 static const float Radian = 3.1415926/180;

@@ -84,7 +84,7 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
         }break;
         case PredictStatus::UNCLEAR:{
             lostCount++;
-            pos = predict.predictNotarget3D(bulletVelocity);
+            pos = predict.predict3D(bulletVelocity);
             isFindtarget = true;
 
         }break;
@@ -99,10 +99,6 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
 
 
     }
-
-    exchangeMutex.lock();
-    ConfigureParam(recivedData);
-    exchangeMutex.unlock();
     
     Rotate(pos);
     float distance;
@@ -155,13 +151,16 @@ void ArmorDector::ConfigureParam(ReceivedData & data){
 }
 
 void ArmorDector::ConfigureData(VisionData &data,const Eigen::Vector3f &vec){
-    data.pitchData.f = vec[0];
-    data.yawData.f = vec[1];
+
     data.distance = static_cast<char>(vec[2]);
     if(isFindtarget == true){
+        data.pitchData.f = vec[0];
+        data.yawData.f = vec[1];
         data.IsHaveArmor = 0x01;
     }
     else{
+        data.pitchData.f = 0.0f;
+        data.yawData.f = 0.0f;
         data.IsHaveArmor = 0x00;
     }
     if(vec[0] < Constants::RangeOfShoot && vec[1] < Constants::RangeOfShoot){
