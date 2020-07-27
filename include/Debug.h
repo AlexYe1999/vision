@@ -1,5 +1,7 @@
 
 //#define COMPETITION_ON //比赛模式 打开后所有调试关闭
+
+#define GAMMA_TRANSFORM
 #ifndef COMPETITION_ON
 
 //-------------------------------------------------------------------------

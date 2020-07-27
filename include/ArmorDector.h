@@ -74,7 +74,7 @@ public:
 
 public:
     void ConfigureParam(ReceivedData & data);
-    bool StartProc(const cv::Mat& frame, Eigen::Vector3f& angle); //开始
+    bool StartProc(cv::Mat& frame, Eigen::Vector3f& angle); //开始
     void ConfigureData(VisionData &data,const Eigen::Vector3f &vec);
 
     void SetMode(volatile Mode& tMode);
@@ -86,11 +86,7 @@ private:
     unsigned short GetRuneData(const cv::Mat & frame, ArmorData allArmor[]); 
 
 private:
-    void GetGamma();
-    void GammaTransf();
-
-private:
-    void SeparateColor(const cv::Mat & frame, cv::Mat & binaryImage);
+    void SeparateColor(cv::Mat frame, cv::Mat & binaryImage);
     void TansformImage(const cv::Mat & binaryImage, cv::Mat & altimateImage);
     unsigned short GetLedArray(const cv::Mat & altimateImage, LedData rectArray[]);
     unsigned short CombinateLED(LedData ledArray[], ArmorData armorArray[] , const unsigned short & LedArraySize); 
@@ -117,7 +113,13 @@ private:
     }
 
 private:
-    unsigned int lostCount;
+    void checkImage(cv::Mat mat);
+    void GammaTransf(cv::Mat & img, const unsigned int & gamma);
+
+private:
+    unsigned short lostCount;
+    unsigned int AverGray;
+    bool OpenGamma;
 
 private:
     Mode mode;

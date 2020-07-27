@@ -27,8 +27,8 @@ void Serial::paraReceiver(){
         exchangeMutex.unlock();
 
         if(procState == ProcState::FINISHED){
-            procState = ProcState::ISPROC;
             port.SendData(visionData);             //发送数据
+            procState = ProcState::ISPROC;            
         }
 
     }
@@ -126,7 +126,7 @@ void Port::SendData(VisionData & data)
 
     write(portNum, send_bytes, 16);
     printf("sent: ");
-    for(int i=0;i<16;i++){
+    for(int i=0;i<17;i++){
         printf("%X ",send_bytes[i]);
     }
     std::cout<<"\n";
@@ -150,31 +150,27 @@ void Port::ReciveData(ReceivedData & data){
     ioctl(portNum, FIONREAD, &bytes); //读取串口和受到的字节数
     if(bytes == 0) return;
 
-    bytes = read(portNum,rec_bytes,13);
+    bytes = read(portNum,rec_bytes,14);
 
-    if(rec_bytes[0] == 0xaa && rec_bytes[12] == 0xbb){
-        data.pitch.uc[0] = rec_bytes[0];
-        data.pitch.uc[1] = rec_bytes[1];
-        data.pitch.uc[2] = rec_bytes[2];
-        data.pitch.uc[3] = rec_bytes[3];
-        if(rec_bytes[5] == 0x00){
-            data.pitch.f *= -1.0;
-        }
+    if(rec_bytes[0] == 0xaa && rec_bytes[13] == 0xbb){
+        data.pitch.uc[0] = rec_bytes[1];
+        data.pitch.uc[1] = rec_bytes[2];
+        data.pitch.uc[2] = rec_bytes[3];
+        data.pitch.uc[3] = rec_bytes[4];
+        
         data.yaw.uc[0] = rec_bytes[6];
         data.yaw.uc[1] = rec_bytes[7];
         data.yaw.uc[2] = rec_bytes[8];      
         data.yaw.uc[3] = rec_bytes[9];
-        if(rec_bytes[10] == 0x00){
-            data.yaw.f *= -1.0;
-        }
 
         data.level = rec_bytes[11];
+        //是否打符号
     }
-/*     printf("receive: ");
-    for(int i=0;i < 13;i++){
+    printf("receive: ");
+    for(int i=0;i < 14;i++){
         printf("%X ",rec_bytes[i]);
     }
-    std::cout<<std::endl; */
+    std::cout<<std::endl;
     ioctl(portNum, FIONREAD, &bytes);
 
     if(bytes>0){

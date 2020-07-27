@@ -1,4 +1,5 @@
 #include<algorithm>
+#include<mutex>
 #include<Eigen/Core>
 #include<Eigen/Dense>
 #include<eigen3/Eigen/Eigen>
@@ -9,8 +10,11 @@
 #include"Serial.h"
 using namespace Robomaster;
 
+extern std::mutex exchangeMutex; //数据交换锁
+extern ReceivedData recivedData;
+
 #ifdef SHOW_IMAGE
-std::ostringstream string;
+extern int gamma_g;
 extern cv::Mat Rune;
 #endif
 
@@ -27,8 +31,100 @@ ArmorDector::ArmorDector():
     lostCount(0),
     level(0),
     predict(),
-    bulletVelocity(8)
+    bulletVelocity(8),
+    AverGray(0),
+    OpenGamma(false)
 {}
+
+/**
+ * @brief 分部函数
+ * @param frame 当前图像的副本
+ * @param mode 射击模式
+ * @param aimPos 射击点
+ * @return 是否成功
+ */
+bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
+
+#ifdef GAMMA_TRANSFORM    
+#ifdef SHOW_IMAGE
+        GammaTransf(frame, gamma_g);
+        cv::imshow("gamatransform", frame);
+#else
+    if(predictStatus == PredictStatus::NONE 
+    && lostCount > Constants::LostCountBuffer){
+        OpenGamma = true;
+        lostCount = 0;
+        return false;
+    }
+#endif    
+#endif
+
+    switch(mode){
+        case Mode::Armor:{
+            GetArmorData(frame);
+            break;
+        }
+        case Mode::Rune:{
+            break;
+        }
+        default:
+            return false;
+    }
+
+    switch(predictStatus)   {
+        case PredictStatus::NEW:{
+            predict.init3D(lastTarget);
+            isFindtarget = true;
+
+        }break;
+        case  PredictStatus::FIND:{
+            pos = predict.predict3D(lastTarget, bulletVelocity);
+            isFindtarget = true;
+
+        }break;
+        case PredictStatus::UNCLEAR:{
+            lostCount++;
+            pos = predict.predictNotarget3D(bulletVelocity);
+            isFindtarget = true;
+
+        }break;
+        case PredictStatus::NONE:{
+            lostCount++;
+            pos = Eigen::Vector3f(0,0,1);
+            isFindtarget = false;
+
+        }break;
+        default:{
+        }break;
+
+
+    }
+
+    exchangeMutex.lock();
+    ConfigureParam(recivedData);
+    exchangeMutex.unlock();
+    
+    Rotate(pos);
+    float distance;
+    float yaw;
+    float pitch;
+    distance =sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100;
+    yaw = atan2(pos[0],pos[2])/Constants::Radian;
+    pitch = atan2(pos[1],pos[2])/Constants::Radian;
+
+#ifdef SHOW_IMAGE
+    char text[255];
+    sprintf(text,"x: %.2f   y: %.2f   z: %.2f",pos[0],pos[1],pos[2]);
+    cv::putText(Rune,text,cv::Point(10,10),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
+    sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f",yaw,pitch,distance);
+    cv::putText(Rune,text,cv::Point(10,30),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
+
+#endif
+    pos[0] = pitch;
+    pos[1] = yaw;
+    pos[2] = distance;
+}
+
 
 void ArmorDector::ConfigureParam(ReceivedData & data){
     latestAngle.yaw = data.yaw.f;
@@ -50,6 +146,60 @@ void ArmorDector::ConfigureParam(ReceivedData & data){
         default:{
         }break;
     }
+
+#ifdef SHOW_IMAGE
+    char text[255];
+    sprintf(text,"NowYaw: %.2f   NowPitch: %.2f ",latestAngle.pitch,latestAngle.yaw);
+    cv::putText(Rune,text,cv::Point(10,50),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
+#endif
+}
+
+void ArmorDector::ConfigureData(VisionData &data,const Eigen::Vector3f &vec){
+    data.pitchData.f = vec[0];
+    data.yawData.f = vec[1];
+    data.distance = static_cast<char>(vec[2]);
+    if(isFindtarget == true){
+        data.IsHaveArmor = 0x01;
+    }
+    else{
+        data.IsHaveArmor = 0x00;
+    }
+    if(vec[0] < Constants::RangeOfShoot && vec[1] < Constants::RangeOfShoot){
+        data.shoot = true;
+    }
+    else{
+        data.shoot = false;
+    }
+}
+
+
+void ArmorDector::checkImage(cv::Mat mat){
+    cv::Mat gray;
+    cv::cvtColor(mat, gray, CV_BGR2GRAY);
+    for(int i = 0; i < gray.rows; i++)
+    {
+        const uchar * p = gray.ptr<uchar>(i);
+        for(int j = 0; j < gray.step; j++)
+        {
+            AverGray += p[j];
+        }
+    }
+    AverGray = AverGray / (gray.rows * gray.cols * gray.channels());
+}
+
+/**
+ * @brief 伽马值评估
+ * 
+ */
+void ArmorDector::GammaTransf(cv::Mat & img, const unsigned int & gamma){
+    cv::Mat lut(1, 256, CV_8U);
+    uchar * p = lut.data;
+
+    for(int i = 0; i < 256; i++)
+    {
+        p[i] = int(pow(float(i) / 255.0, gamma * 0.01) * 255.0);
+    }
+    cv::LUT(img, lut, img);
 }
 /**
  *@brief 设置射击模式 
@@ -74,125 +224,6 @@ Mode ArmorDector::GetMode() const {
 */
 void ArmorDector::SetAngle(Struct::Angle& latestAngle){
         this->latestAngle = latestAngle;
-}
-
-/**
- * @brief 分部函数
- * @param frame 当前图像的副本
- * @param mode 射击模式
- * @param aimPos 射击点
- * @return 是否成功
- */
-bool ArmorDector::StartProc(const cv::Mat & frame, Eigen::Vector3f & pos){
-    switch(mode){
-        case Mode::Armor:{
-            GetArmorData(frame);
-            break;
-        }
-        case Mode::Rune:{
-            break;
-        }
-        default:
-            return false;
-    }
-
-    switch(predictStatus)   {
-        case PredictStatus::NEW:{
-            predict.init3D(lastTarget);
-            isFindtarget = true;
-
-#ifdef SHOW_IMAGE
-            std::cout << "NEW\n";
-#endif
-
-        }break;
-        case  PredictStatus::FIND:{
-            pos = predict.predict3D(lastTarget, bulletVelocity);
-            isFindtarget = true;
-
-#ifdef SHOW_IMAGE
-            std::cout << "FIND\n";
-#endif
-
-        }break;
-        case PredictStatus::UNCLEAR:{
-            lostCount++;
-            pos = predict.predictNotarget3D(bulletVelocity);
-            isFindtarget = true;
-
-#ifdef SHOW_IMAGE
-            std::cout << "UNCLEAR\n";
- #endif
-
-        }break;
-        case PredictStatus::NONE:{
-            lostCount++;
-            isFindtarget = false;
-
-#ifdef SHOW_IMAGE
-           std::cout << "NONE\n";
-#endif
-
-        }break;
-        default:{
-        }break;
-    }
-
-    Rotate(pos);
-    float distance;
-    float yaw;
-    float pitch;
-    distance = static_cast<char>(sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100);
-    yaw = atan2(pos[0],pos[2])/Constants::Radian;
-    pitch = atan2(pos[1],pos[2])/Constants::Radian;
-
-#ifdef SHOW_IMAGE
-    std::cout<<"px: "<<pos[0]<<" py: "<<pos[1]<<" pz: "<<pos[2]<<std::endl;
-    std::cout <<"yaw: "<<yaw<<" pitch: "<<pitch<<" distance: "<<distance<<std::endl;
-    char text[255];
-    sprintf(text,"x: %.2f   y: %.2f   z: %.2f",pos[0],pos[1],pos[2]);
-    cv::putText(Rune,text,cv::Point(10,10),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
-    sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f",yaw,pitch,distance);
-    cv::putText(Rune,text,cv::Point(10,30),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
-
-#endif
-}
-
-void ArmorDector::ConfigureData(VisionData &data,const Eigen::Vector3f &vec){
-    data.pitchData.f = vec[0];
-    data.yawData.f = vec[1];
-    data.distance = static_cast<char>(vec[2]);
-    if(isFindtarget == true){
-        data.IsHaveArmor = 0x01;
-    }
-    if(vec[0] < Constants::RangeOfShoot && vec[1] < Constants::RangeOfShoot){
-        data.shoot = true;
-    }
-    else{
-        data.shoot = false;
-    }
-}
-
-/**
- * @brief 伽马值评估
- * 
- */
-void ArmorDector::GetGamma(){
-
-
-
-
-}
-
-
-/**
- * @brief 伽马变换
- * 
- */
-void ArmorDector::GammaTransf(){
-
-
-
 }
 
 /**
@@ -260,8 +291,20 @@ unsigned short ArmorDector::GetRuneData(const cv::Mat & frame, ArmorData allArmo
  * @param frame 输入图像
  * @param binaryImage 输出目标颜色的二值化图像
  */
-void ArmorDector::SeparateColor(const cv::Mat & frame, cv::Mat & binaryImage){
+void ArmorDector::SeparateColor(cv::Mat frame, cv::Mat & binaryImage){
     cv::Mat splitIamge[3];
+
+#ifdef GAMMA_TRANSFORM    
+#ifdef SHOW_IMAGE
+        GammaTransf(frame, gamma_g);
+        cv::imshow("gamatransform", frame);
+#else
+    if(OpenGamma){
+        GammaTransf(frame, Constants::Gamma);
+    }
+#endif
+#endif    
+    
     split(frame, splitIamge);
     
     switch(Constants::enemyColor){
@@ -284,6 +327,10 @@ void ArmorDector::SeparateColor(const cv::Mat & frame, cv::Mat & binaryImage){
  */
 void ArmorDector::TansformImage(const cv::Mat & binaryImage, cv::Mat & altimateImage){
     altimateImage = binaryImage > Constants::BinaryRange;
+
+#ifdef SHOW_IMAGE
+    cv::imshow("binary",altimateImage);
+#endif
 }
 
 
@@ -330,6 +377,10 @@ unsigned short ArmorDector::GetLedArray(const cv::Mat & image,LedData ledArray[]
         whRatio = MayTarget.length / width;
 
         if(whRatio < Constants::LedMinRatioRange || whRatio > Constants::LedMaxRatioRange || abs(MayTarget.angle) > Constants::LedAngleRange) continue;
+
+#ifdef SHOW_IMAGE
+            cv::line(Rune,MayTarget.upPoint,MayTarget.downPoint,cv::Scalar(255,255,255),3,8);
+#endif
 
         ledArray[TargetNum++] = MayTarget;
     }

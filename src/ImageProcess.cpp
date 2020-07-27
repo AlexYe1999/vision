@@ -22,10 +22,9 @@ ReceivedData recivedData;
 
 //---------------------------------------------------------------------------------
 #ifdef SHOW_IMAGE
+int gamma_g = 300;
 cv::Mat Rune;
 #endif
-
-
 
 
 /**
@@ -91,9 +90,10 @@ initCamera:
     int gain = 100;
     int gain_value = 100;
     cv::namedWindow("Exposure Adjust");
+    cv::createTrackbar("set gamma", "Exposure Adjust", &gamma_g, 500);
     cv::createTrackbar("曝光","Exposure Adjust",&exp_time_value, 10000);
     cv::createTrackbar("曝光增益","Exposure Adjust",&gain_value, 1000);
-
+    
 #ifdef TIME_COST    
         int64_t tick = cv::getTickCount();
 #endif
@@ -169,7 +169,6 @@ void ImageProcess::ImageConsumer(){
     ArmorDector armorDector;
     Eigen::Vector3f angle;
     cv::Mat srcFrame;
-
 #ifdef TIME_COST 
     int64_t tick;
 #endif
@@ -181,7 +180,7 @@ void ImageProcess::ImageConsumer(){
 #endif
 
 
-        while(MatRear <= MatFront+1 && MatRear < 2);
+        while(MatRear <= MatFront+1 && MatRear < 1);
         MatFront = MatRear;
 
         srcFrame = MatBuffer[(MatFront-1)%5].clone();
@@ -191,14 +190,13 @@ void ImageProcess::ImageConsumer(){
         std::cout<<"\n\n-------------------------------------------------------------------------\n"
                           <<"-------------------------------------------------------------------------\n\n\n";
 #endif
-
         exchangeMutex.lock();
         armorDector.ConfigureParam(recivedData);
         exchangeMutex.unlock();
 
-        procState = ProcState::ISPROC;
-        //if(!armorDector.StartProc(srcFrame, aimPos)) continue;
+        while(procState == ProcState::FINISHED);
         armorDector.StartProc(srcFrame, angle);
+        //armorDector.StartProc(srcFrame, angle);
 
         //填数
         armorDector.ConfigureData(visionData, angle);

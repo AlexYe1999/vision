@@ -51,8 +51,7 @@ static const unsigned short ExposureGain = 300;
 
 //二值化阈值
 static const unsigned short BinaryRange = 80;
- //丢帧限制
-static const unsigned int LostRange = 3;
+static const unsigned short Gamma = 0;
 
 //灯条确定
 //灯条最小像素值
@@ -80,11 +79,14 @@ static const float ArmorMinRatio = 0.55;
 //最大长宽比
 static const float ArmorMaxRatio = 6.0; 
 
-
+ //丢帧限制
+static const unsigned int LostRange = 43;
+//最大缓冲
+static const unsigned int LostCountBuffer = 30;
 
 //目标确定为同一个的距离最大值
-static const unsigned int RangeOfCorrect = 300;
-
+static const unsigned int RangeOfCorrect = 500;
+//射击角度
 static const unsigned int RangeOfShoot = 5;
 //----------------------------固定参数---------------------------------
 
@@ -117,7 +119,7 @@ static const float rRuneWidth = 24;
 static const float rRuneHeight = 18;    
 
 //相机内参
-static const cv::Mat caremaMatrix_shoot = (
+/* static const cv::Mat caremaMatrix_shoot = (
         cv::Mat_<float>(3, 3) << 648.4910,                  0,                         328.2316,
                                                         0,                                     652.0198,         254.6992,
                                                         0,                                     0,                                          1
@@ -129,22 +131,22 @@ static const cv::Mat distCoeffs_shoot = (
                                                         0,
                                                         0,
                                                         0);  
-} 
+}  */
 
-/* //相机内参2
+//相机内参2
 static const cv::Mat caremaMatrix_shoot = (
-        cv::Mat_<float>(3, 3) << 640.50006,                  0,                         305.09497,
-                                                        0,                                     652.0198,         255.88171,
+        cv::Mat_<float>(3, 3) << 623.94494,                  0,                         308.05780,
+                                                        0,                                     626.19679,         255.94809,
                                                         0,                                     0,                                          1
 );
 //畸变参数
 static const cv::Mat distCoeffs_shoot = (
-        cv::Mat_<float>(1, 5) <<-0.22324, 
-                                                        0.19562,
-                                                        -0.00020,
-                                                        0.00282,
+        cv::Mat_<float>(1, 5) <<-0.22196, 
+                                                        0.18886,
+                                                        -0.00333,
+                                                        -0.00029,
                                                         0);  
-} */
+}
 
 
 /*
@@ -175,10 +177,9 @@ public:
     float y;
     float z;
     ArmorCatglory armorCatglory;
-    Target():x(0),y(0),z(0){}
+    Target():x(0),y(0),z(1){}
 };
 }
-
 
 }
 
