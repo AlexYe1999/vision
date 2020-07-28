@@ -22,7 +22,7 @@ ReceivedData recivedData;
 
 //---------------------------------------------------------------------------------
 #ifdef SHOW_IMAGE
-int gamma_g = 300;
+int gamma_g = 400;
 cv::Mat Rune;
 #endif
 
@@ -90,10 +90,12 @@ initCamera:
     int gain = 100;
     int gain_value = 100;
     cv::namedWindow("Exposure Adjust");
+#ifdef SHOW_IMAGE
     cv::createTrackbar("set gamma", "Exposure Adjust", &gamma_g, 500);
+#endif    
     cv::createTrackbar("曝光","Exposure Adjust",&exp_time_value, 10000);
-    cv::createTrackbar("曝光增益","Exposure Adjust",&gain_value, 1000);
-    
+    cv::createTrackbar("曝光增益","Exposure Adjust",&gain_value, 1000);    
+
 #ifdef TIME_COST    
         int64_t tick = cv::getTickCount();
 #endif

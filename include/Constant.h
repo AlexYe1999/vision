@@ -104,10 +104,13 @@ static const float CompensationFactor_Y = 7.0f;
 static const float CompensationFactor_Z = 14.5f;
 //处理时间补偿
 static const float CompensationFactor_Proc = 0.018f;
+//重力加速度
+static const float Gravity = 980;
 //加速度一半
-static const float CompensationFactor_Half_Accelarate = 490.0f;
+static const float Gravity_Half = 490.0f;
 //云台高度
-static const float Height_PAN =  0;
+static const float Height_PAN =  35;
+
 
 //弧度
 static const float Radian = 3.1415926/180;

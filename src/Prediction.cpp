@@ -37,7 +37,7 @@ Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity){
 #endif
 
         tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1]+Constants::CompensationFactor_Half_Accelarate*t*t+2;
+        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t+2;
         tz = Zstate[0]+t*Zstate[1];
         return Eigen::Vector3f(tx ,ty, tz);
 }
@@ -50,7 +50,7 @@ Eigen::Vector3f Prediction::predict3D(float & velocity){
         float a = Xstate[1]*Xstate[1] + Ystate[1]*Ystate[1] + Zstate[1]*Zstate[1] - velocity*velocity;
         float b = Xstate[0]*Xstate[1] + Ystate[0]*Ystate[1] + Zstate[0]*Zstate[1];
         float c = Xstate[0]*Xstate[0] + Ystate[0]*Ystate[0] + Zstate[0]*Zstate[0];
-        t = (-b+sqrt(b*b-4*a*c))/(2*a)+Constants::CompensationFactor_Proc;
+        t = abs((-b+sqrt(b*b-4*a*c))/(2*a))+Constants::CompensationFactor_Proc;
 
 #ifdef SHOW_IMAGE
         char text[255];
@@ -59,7 +59,7 @@ Eigen::Vector3f Prediction::predict3D(float & velocity){
 #endif
         
         tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1]+Constants::CompensationFactor_Half_Accelarate*t*t+2;
+        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t+2;
         tz = Zstate[0]+t*Zstate[1];
         return Eigen::Vector3f(tx ,ty, tz);
 

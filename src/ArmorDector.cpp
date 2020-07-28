@@ -99,7 +99,11 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
 
 
     }
-    
+
+    exchangeMutex.lock();
+    ConfigureParam(recivedData);
+    exchangeMutex.unlock();    
+
     Rotate(pos);
     float distance;
     float yaw;
@@ -112,7 +116,7 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     char text[255];
     sprintf(text,"x: %.2f   y: %.2f   z: %.2f",pos[0],pos[1],pos[2]);
     cv::putText(Rune,text,cv::Point(10,10),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
-    sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f",yaw,pitch,distance);
+    sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f", yaw, pitch, distance);
     cv::putText(Rune,text,cv::Point(10,30),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 
 #endif
@@ -123,8 +127,8 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
 
 
 void ArmorDector::ConfigureParam(ReceivedData & data){
-    latestAngle.yaw = data.yaw.f;
-    latestAngle.pitch = data.pitch.f;
+    latestAngle.yaw = data.yaw.f*Constants::Radian;
+    latestAngle.pitch = data.pitch.f*Constants::Radian;
     level = static_cast<unsigned int>(data.level);
     switch (level){
         case 0x00:{
