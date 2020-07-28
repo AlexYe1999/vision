@@ -22,7 +22,7 @@ ReceivedData recivedData;
 
 //---------------------------------------------------------------------------------
 #ifdef SHOW_IMAGE
-int gamma_g = 400;
+int gamma_g = 450;
 cv::Mat Rune;
 #endif
 

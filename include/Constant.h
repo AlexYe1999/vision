@@ -90,10 +90,10 @@ static const unsigned int RangeOfCorrect = 300;
 static const unsigned int RangeOfShoot = 50;
 //----------------------------固定参数-----------------------50----------
 
-static const float shootVelocityLevel_0 = 20;
-static const float shootVelocityLevel_1 = 10;
-static const float shootVelocityLevel_2 = 13;
-static const float shootVelocityLevel_3 = 28;
+static const float shootVelocityLevel_0 = 2200;
+static const float shootVelocityLevel_1 = 1000;
+static const float shootVelocityLevel_2 = 1300;
+static const float shootVelocityLevel_3 = 2800;
 
 //摄像头相对于轴心的位置
 //炮口补偿系数X轴

@@ -119,6 +119,24 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f", yaw, pitch, distance);
     cv::putText(Rune,text,cv::Point(10,30),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 
+    switch(static_cast<int>(distance)){
+        case 0:{
+            pitch += 7;
+        }break;
+        case 1:{
+            pitch += 5;
+        }break;
+        case 2:{
+            pitch += 4;
+        }break;
+        case 3:{
+            pitch += 3;      
+        }
+        default:{
+            ;
+        }
+    }
+
 #endif
     pos[0] = pitch;
     pos[1] = yaw;

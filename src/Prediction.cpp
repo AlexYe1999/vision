@@ -37,7 +37,7 @@ Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity){
 #endif
 
         tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t+2;
+        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t;
         tz = Zstate[0]+t*Zstate[1];
         return Eigen::Vector3f(tx ,ty, tz);
 }
@@ -59,7 +59,7 @@ Eigen::Vector3f Prediction::predict3D(float & velocity){
 #endif
         
         tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t+2;
+        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t;
         tz = Zstate[0]+t*Zstate[1];
         return Eigen::Vector3f(tx ,ty, tz);
 
