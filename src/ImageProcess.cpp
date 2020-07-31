@@ -196,7 +196,6 @@ void ImageProcess::ImageConsumer(){
         armorDector.ConfigureParam(recivedData);
         exchangeMutex.unlock();
 
-        while(procState == ProcState::FINISHED);
         armorDector.StartProc(srcFrame, angle);
         //armorDector.StartProc(srcFrame, angle);
 
