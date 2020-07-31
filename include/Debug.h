@@ -8,7 +8,8 @@
 //#define SERIAL_CLOSE //串口关闭
 #define CAMERA_ON //相机打开
 //#define RECORD //录像
-
+//不收角度
+//#define NO_RECIVE_ANGLE
 
 #define TIME_COST //计时
 #define SHOW_IMAGE //效果图片
