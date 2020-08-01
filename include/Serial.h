@@ -33,8 +33,10 @@ struct VisionData{
     char distance;
     char IsHaveArmor;
     char shoot;
-    VisionData():
-    pitchData(),yawData(),distance(0),IsHaveArmor(0),shoot(0){};
+    VisionData():distance(0),IsHaveArmor(0),shoot(0){
+        pitchData.f = 0.0f;
+        yawData.f = 0.0f;
+    };
 };
 
 /*

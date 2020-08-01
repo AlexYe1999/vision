@@ -77,7 +77,7 @@ static const float DeltaXRatio = 5.0;
 //最小长宽比
 static const float ArmorMinRatio = 0.55; 
 //最大长宽比
-static const float ArmorMaxRatio = 6.0; 
+static const float ArmorMaxRatio = 16.0; 
 
  //丢帧限制
 static const unsigned int LostRange = 43;
@@ -99,7 +99,8 @@ static const float shootVelocityLevel_3 = 28;
 //炮口补偿系数X轴
 static const float CompensationFactor_X = 0.0f;
 //炮口补偿系数Y轴
-static const float CompensationFactor_Y = 7.0f;
+//static const float CompensationFactor_Y = 7.0f;
+static const float CompensationFactor_Y = 0.0f;
 //炮口补偿系数Z轴
 static const float CompensationFactor_Z = 14.5f;
 //处理时间补偿

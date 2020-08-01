@@ -197,7 +197,6 @@ void ImageProcess::ImageConsumer(){
         exchangeMutex.unlock();
 
         armorDector.StartProc(srcFrame, angle);
-        //armorDector.StartProc(srcFrame, angle);
 
         //填数
         armorDector.ConfigureData(visionData, angle);
