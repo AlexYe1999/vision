@@ -33,7 +33,11 @@ ArmorDector::ArmorDector():
     predict(),
     bulletVelocity(8),
     AverGray(0),
-    OpenGamma(false)
+    OpenGamma(false),
+    y(0),
+    V(0),
+    Z(0),
+    T(0)
 {}
 
 /**
@@ -70,7 +74,7 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
         default:
             return false;
     }
-
+    float time;
     switch(predictStatus)   {
         case PredictStatus::NEW:{
             predict.init3D(lastTarget);
@@ -78,13 +82,13 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
 
         }break;
         case  PredictStatus::FIND:{
-            pos = predict.predict3D(lastTarget, bulletVelocity);
+            pos = predict.predict3D(lastTarget, bulletVelocity, time);
             isFindtarget = true;
 
         }break;
         case PredictStatus::UNCLEAR:{
             lostCount++;
-            pos = predict.predict3D(bulletVelocity);
+            pos = predict.predict3D(bulletVelocity, time);
             isFindtarget = true;
 
         }break;
@@ -108,9 +112,21 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     float distance;
     float yaw;
     float pitch;
+    double x = 0;
+    double x1 = 1.0;
+    unsigned short count = 0;
+    set(pos[1], time, bulletVelocity, pos[2]);
+
+    while(abs(x-x1) > 0.001 && count < 30){
+        x1 = x;
+        x = x - f(x) / f_(x);
+        count++;
+    }
+    
+    if(count  > 30 ) return false;
     distance =sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100;
     yaw = atan2(pos[0],pos[2])/Constants::Radian;
-    pitch = atan2(pos[1],pos[2])/Constants::Radian;
+    pitch = x/Constants::Radian;
 
 #ifdef SHOW_IMAGE
     char text[255];
@@ -118,24 +134,6 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     cv::putText(Rune,text,cv::Point(10,10),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
     sprintf(text,"yaw: %.2f   pitch: %.2f   distance: %.2f", yaw, pitch, distance);
     cv::putText(Rune,text,cv::Point(10,30),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
-
-    switch(static_cast<int>(distance)){
-        case 0:{
-            pitch += 7;
-        }break;
-        case 1:{
-            pitch += 5;
-        }break;
-        case 2:{
-            pitch += 4;
-        }break;
-        case 3:{
-            pitch += 3;      
-        }
-        default:{
-            ;
-        }
-    }
 
 #endif
     pos[0] = pitch;
@@ -701,4 +699,19 @@ void ArmorDector::ReverseRotate(Eigen::Vector3f& vec){
 
 void ArmorDector::Rotate(Eigen::Vector3f& vec){
     vec = Mpitch.inverse()*Myaw.inverse()*vec;
+}
+
+double ArmorDector::f(double x){
+    return y + Constants::Gravity_Half*T*T-V*sin(x)*T-Z*tan(x);
+}
+
+double ArmorDector::f_(double x){
+    return Constants::Gravity*T-V*cos(x)-Z*(1/(cos(x)*cos(x)));
+}
+
+void ArmorDector::set(double y_, double t, double V_, double Z_){
+    y = y_;
+    T = t;
+    Z = Z_;
+    V = V_;
 }

@@ -6,8 +6,8 @@ class Prediction{
 public:
     Prediction();
     void init3D(Target &vec);
-    Eigen::Vector3f predict3D(Target &vec, float & velocity);
-    Eigen::Vector3f predict3D(float & velocity);
+    Eigen::Vector3f predict3D(Target &vec, float & velocity, float & t);
+    Eigen::Vector3f predict3D(float & velocity, float & t );
 
 private:
     float tx;

@@ -20,11 +20,10 @@ void Prediction::init3D(Target &vec){
         Z.init(vec.z);
 }
 
-Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity){
+Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity, float & t){
         Xstate = X.predict(vec.x);
         Ystate = Y.predict(vec.y);
         Zstate = Z.predict(vec.z);
-        float t;
         float a = Xstate[1]*Xstate[1] + Ystate[1]*Ystate[1] + Zstate[1]*Zstate[1] - velocity*velocity;
         float b = Xstate[0]*Xstate[1] + Ystate[0]*Ystate[1] + Zstate[0]*Zstate[1];
         float c = Xstate[0]*Xstate[0] + Ystate[0]*Ystate[0] + Zstate[0]*Zstate[0];
@@ -38,19 +37,16 @@ Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity){
         cv::putText(Rune,text,cv::Point(10,90),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 #endif
 
-        tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t;
-        tz = Zstate[0]+t*Zstate[1];
-        ty = tan(asin(ty/(velocity*t)))*tz;
-        std::cout <<ty<<std::endl;
+        tx = Xstate[0]+t*Xstate[1]+0.5*Xstate[2]*t*t;
+        ty = Ystate[0]+t*Ystate[1]+0.5*Ystate[2]*t*t;
+        tz = Zstate[0]+t*Zstate[1], 0.5*Zstate[2]*t*t;
         return Eigen::Vector3f(tx ,ty, tz);
 }
 
-Eigen::Vector3f Prediction::predict3D(float & velocity){
+Eigen::Vector3f Prediction::predict3D(float & velocity, float & t){
         Xstate = X.predict_notarget();
         Ystate = Y.predict_notarget();
         Zstate = Z.predict_notarget();
-        float t;
         float a = Xstate[1]*Xstate[1] + Ystate[1]*Ystate[1] + Zstate[1]*Zstate[1] - velocity*velocity;
         float b = Xstate[0]*Xstate[1] + Ystate[0]*Ystate[1] + Zstate[0]*Zstate[1];
         float c = Xstate[0]*Xstate[0] + Ystate[0]*Ystate[0] + Zstate[0]*Zstate[0];
@@ -64,9 +60,9 @@ Eigen::Vector3f Prediction::predict3D(float & velocity){
         cv::putText(Rune,text,cv::Point(10,90),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 #endif
         
-        tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1]+Constants::Gravity_Half*t*t;
-        tz = Zstate[0]+t*Zstate[1];
+        tx = Xstate[0]+t*Xstate[1]+0.5*Xstate[2]*t*t;
+        ty = Ystate[0]+t*Ystate[1]+0.5*Ystate[2]*t*t;
+        tz = Zstate[0]+t*Zstate[1], 0.5*Zstate[2]*t*t;
         return Eigen::Vector3f(tx ,ty, tz);
 
 }

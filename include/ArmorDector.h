@@ -127,6 +127,14 @@ private:
     float bulletVelocity;
     
 private:
+    double f(double x);
+    double f_(double x);
+    void set(double y_, double t, double V_, double Z_);
+    double y;                           
+    double V;
+    double Z;
+    double T;
+private:
     PredictStatus predictStatus;
     unsigned short lostTarget;
     bool isFindtarget;
