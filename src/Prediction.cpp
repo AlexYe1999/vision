@@ -37,9 +37,9 @@ Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity, float & t){
         cv::putText(Rune,text,cv::Point(10,90),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 #endif
 
-        tx = Xstate[0]+t*Xstate[1]+0.5*Xstate[2]*t*t;
-        ty = Ystate[0]+t*Ystate[1]+0.5*Ystate[2]*t*t;
-        tz = Zstate[0]+t*Zstate[1], 0.5*Zstate[2]*t*t;
+        tx = Xstate[0]+t*Xstate[1];
+        ty = Ystate[0]+t*Ystate[1];
+        tz = Zstate[0]+t*Zstate[1];
         return Eigen::Vector3f(tx ,ty, tz);
 }
 
@@ -53,16 +53,14 @@ Eigen::Vector3f Prediction::predict3D(float & velocity, float & t){
         t = abs((-b+sqrt(b*b-4*a*c))/(2*a))+Constants::CompensationFactor_Proc;
 
 #ifdef SHOW_IMAGE
-        char text[255];
-        sprintf(text,"t: %.2f   x: %.2f   y: %.2f   z: %.2f",t, tx, ty, tz);
-        cv::putText(Rune,text,cv::Point(10,70),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);        
-        sprintf(text,"vx: %.2f   vy: %.2f   vz: %.2f",Xstate[1],Ystate[1],Zstate[1]);
+        char text[255]; 
+        sprintf(text,"t: %.2f vx: %.2f   vy: %.2f   vz: %.2f", t, Xstate[1],Ystate[1],Zstate[1]);
         cv::putText(Rune,text,cv::Point(10,90),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 #endif
         
-        tx = Xstate[0]+t*Xstate[1]+0.5*Xstate[2]*t*t;
-        ty = Ystate[0]+t*Ystate[1]+0.5*Ystate[2]*t*t;
-        tz = Zstate[0]+t*Zstate[1], 0.5*Zstate[2]*t*t;
+        tx = Xstate[0]+t*Xstate[1];
+        ty = Ystate[0]+t*Ystate[1];
+        tz = Zstate[0]+t*Zstate[1];
         return Eigen::Vector3f(tx ,ty, tz);
 
 }

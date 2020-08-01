@@ -115,6 +115,7 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     double x = 0;
     double x1 = 1.0;
     unsigned short count = 0;
+
     set(pos[1], time, bulletVelocity, pos[2]);
 
     while(abs(x-x1) > 0.001 && count < 30){
@@ -124,9 +125,11 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     }
     
     if(count  > 30 ) return false;
+
     distance =sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100;
     yaw = atan2(pos[0],pos[2])/Constants::Radian;
-    pitch = x/Constants::Radian;
+    pitch = (x-latestAngle.pitch*0.012)/Constants::Radian;
+
 
 #ifdef SHOW_IMAGE
     char text[255];
