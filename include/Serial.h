@@ -84,7 +84,6 @@ private:
     const char *const PortName = "/dev/ttyUSB0"; //端口名
     int portNum;
     unsigned char rec_bytes[255];
-
     unsigned char send_bytes[14];
     unsigned char pitch_bit_;
     unsigned char yaw_bit_;

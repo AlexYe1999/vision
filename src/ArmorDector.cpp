@@ -123,6 +123,7 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
         count++;
     }
     
+    if(count  > 30 ) return false;
     distance =sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100;
     yaw = atan2(pos[0],pos[2])/Constants::Radian;
     pitch = x/Constants::Radian;

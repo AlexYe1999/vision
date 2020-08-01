@@ -136,54 +136,49 @@ void Port::SendData(VisionData & data)
 /**
 *   @brief:串口PC端接收
 *   @param:
-*          send_bytes[0] 0xaa 
-*          send_bytes[1]--send_bytes[4]为yaw数据
-*          send_bytes[5] yaw符号位
-*          send_bytes[6]--send_bytes[9]为pitch数据
-*          send_bytes[10]  pitch符号位
+*          send_bytes[0] 0xff 
+*          send_bytes[1]--send_bytes[4]为pitch数据
+*          send_bytes[5] pitch符号位
+*          send_bytes[6]--send_bytes[9]为yaw数据
+*          send_bytes[10]  yaw符号位
 *          send_bytes[11] 等级
-*          send_bytes[12] 0xaa
+*          send_bytes[12] 0xff
 */
 void Port::ReciveData(ReceivedData & data){
 
     int bytes;
+    unsigned char last[1];
     ioctl(portNum, FIONREAD, &bytes); //读取串口和受到的字节数
     if(bytes == 0) return;
 
     bytes = read(portNum,rec_bytes,14);
 
     if(rec_bytes[0] == 0xaa && rec_bytes[13] == 0xbb){
-        data.yaw.uc[0] = rec_bytes[1];
-        data.yaw.uc[1] = rec_bytes[2];
-        data.yaw.uc[2] = rec_bytes[3];
-        data.yaw.uc[3] = rec_bytes[4];
+        data.pitch.uc[0] = rec_bytes[1];
+        data.pitch.uc[1] = rec_bytes[2];
+        data.pitch.uc[2] = rec_bytes[3];
+        data.pitch.uc[3] = rec_bytes[4];
         
-        data.pitch.uc[0] = rec_bytes[6];
-        data.pitch.uc[1] = rec_bytes[7];
-        data.pitch.uc[2] = rec_bytes[8];      
-        data.pitch.uc[3] = rec_bytes[9];
+        data.yaw.uc[0] = rec_bytes[6];
+        data.yaw.uc[1] = rec_bytes[7];
+        data.yaw.uc[2] = rec_bytes[8];      
+        data.yaw.uc[3] = rec_bytes[9];
 
         data.level = rec_bytes[11];
         //是否打符号
 
     }
-/*     else{
-        for(int i = 0;i < 14;i++){
-            if(rec_bytes[i] == 0xaa){
-                bytes = read(portNum,rec_bytes,i);
-            }
-            break;            
-        }
-
-    } */
-    
+    else{
+        do{
+            read(portNum,last,1);
+        }while(last[0] != 0xbb);
+    }
     printf("receive: ");
     for(int i=0;i < 14;i++){
         printf("%X ",rec_bytes[i]);
     }
     std::cout<<std::endl;
     ioctl(portNum, FIONREAD, &bytes);
-
 
 }
 
