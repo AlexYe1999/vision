@@ -126,7 +126,7 @@ void Port::SendData(VisionData & data)
 
     write(portNum, send_bytes, 16);
     printf("sent: ");
-    for(int i=0;i<17;i++){
+    for(int i=0;i<16;i++){
         printf("%X ",send_bytes[i]);
     }
     std::cout<<"\n";
@@ -136,13 +136,13 @@ void Port::SendData(VisionData & data)
 /**
 *   @brief:串口PC端接收
 *   @param:
-*          send_bytes[0] 0xff 
-*          send_bytes[1]--send_bytes[4]为pitch数据
-*          send_bytes[5] pitch符号位
-*          send_bytes[6]--send_bytes[9]为yaw数据
-*          send_bytes[10]  yaw符号位
+*          send_bytes[0] 0xaa 
+*          send_bytes[1]--send_bytes[4]为yaw数据
+*          send_bytes[5] yaw符号位
+*          send_bytes[6]--send_bytes[9]为pitch数据
+*          send_bytes[10]  pitch符号位
 *          send_bytes[11] 等级
-*          send_bytes[12] 0xff
+*          send_bytes[12] 0xaa
 */
 void Port::ReciveData(ReceivedData & data){
 
@@ -153,19 +153,30 @@ void Port::ReciveData(ReceivedData & data){
     bytes = read(portNum,rec_bytes,14);
 
     if(rec_bytes[0] == 0xaa && rec_bytes[13] == 0xbb){
-        data.pitch.uc[0] = rec_bytes[1];
-        data.pitch.uc[1] = rec_bytes[2];
-        data.pitch.uc[2] = rec_bytes[3];
-        data.pitch.uc[3] = rec_bytes[4];
+        data.yaw.uc[0] = rec_bytes[1];
+        data.yaw.uc[1] = rec_bytes[2];
+        data.yaw.uc[2] = rec_bytes[3];
+        data.yaw.uc[3] = rec_bytes[4];
         
-        data.yaw.uc[0] = rec_bytes[6];
-        data.yaw.uc[1] = rec_bytes[7];
-        data.yaw.uc[2] = rec_bytes[8];      
-        data.yaw.uc[3] = rec_bytes[9];
+        data.pitch.uc[0] = rec_bytes[6];
+        data.pitch.uc[1] = rec_bytes[7];
+        data.pitch.uc[2] = rec_bytes[8];      
+        data.pitch.uc[3] = rec_bytes[9];
 
         data.level = rec_bytes[11];
         //是否打符号
+
     }
+/*     else{
+        for(int i = 0;i < 14;i++){
+            if(rec_bytes[i] == 0xaa){
+                bytes = read(portNum,rec_bytes,i);
+            }
+            break;            
+        }
+
+    } */
+    
     printf("receive: ");
     for(int i=0;i < 14;i++){
         printf("%X ",rec_bytes[i]);
@@ -173,9 +184,6 @@ void Port::ReciveData(ReceivedData & data){
     std::cout<<std::endl;
     ioctl(portNum, FIONREAD, &bytes);
 
-    if(bytes>0){
-        read(portNum,rec_bytes,bytes);
-    }
 
 }
 

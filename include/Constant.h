@@ -77,7 +77,7 @@ static const float DeltaXRatio = 5.0;
 //最小长宽比
 static const float ArmorMinRatio = 0.55; 
 //最大长宽比
-static const float ArmorMaxRatio = 6.0; 
+static const float ArmorMaxRatio = 16.0; 
 
  //丢帧限制
 static const unsigned int LostRange = 43;
