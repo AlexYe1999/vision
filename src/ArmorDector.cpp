@@ -121,25 +121,12 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     double b = sqrt(pow(pos[0],2)+pow(pos[2],2))*pow(bulletVelocity,2);
     double c = -0.5*Constants::Gravity*(pow(pos[0],2)+pow(pos[2],2))-pow(bulletVelocity,2)*pos[1];
     double delta = pow(b,2)-4*a*c;
-    if(delta){
-        isFindtarget = false;
-        return false;      
-    }
+
 
     double theta1 = atan((-b + sqrt(delta))/(2*a))/Constants::Radian;
     double theta2 = atan((-b + sqrt(delta))/(2*a))/Constants::Radian; 
-    if(fabs(theta1) < fabs(theta2) && theta1 < 45 ){
-        pitch = theta1;
-    }
-    else if (fabs(theta2) < 45){
-        pitch = theta2;
-    }
-    else{
-        isFindtarget = false;
-        return false;
-    }
 
-    set(pos[1], time, bulletVelocity, pos[2]);
+/*    set(pos[1], time, bulletVelocity, pos[2]);
 
     while(abs(x-x1) > 0.001 && count < 30){
         x1 = x;
@@ -148,11 +135,11 @@ bool ArmorDector::StartProc(cv::Mat & frame, Eigen::Vector3f & pos){
     }
     isFindtarget = false;
     if(count  > 30 ) return false;
-
+ */
     distance =sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2])/100;
-    yaw = atan2(pos[0],pos[2])/Constants::Radian;
-    pitch = (x-latestAngle.pitch*0.015)/Constants::Radian;
-
+    yaw = atan2(pos[0],pos[2])/Constants::Radian+1;
+//    pitch = (x-latestAngle.pitch*0.015)/Constants::Radian;
+    pitch = theta1-3;
 
 #ifdef SHOW_IMAGE
     char text[255];

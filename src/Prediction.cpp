@@ -37,9 +37,9 @@ Eigen::Vector3f Prediction::predict3D(Target &vec,float & velocity, float & t){
         cv::putText(Rune,text,cv::Point(10,90),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 #endif
 
-        tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1];
-        tz = Zstate[0]+t*Zstate[1];
+        tx = Xstate[0]+t*Xstate[1]+0.5*Xstate[2]*Xstate[2];
+        ty = Ystate[0]+t*Ystate[1]+0.5*Ystate[2]*Ystate[2];
+        tz = Zstate[0]+t*Zstate[1]+0.5*Zstate[2]*Zstate[2];
         return Eigen::Vector3f(tx ,ty, tz);
 }
 
@@ -58,9 +58,9 @@ Eigen::Vector3f Prediction::predict3D(float & velocity, float & t){
         cv::putText(Rune,text,cv::Point(10,90),CV_FONT_HERSHEY_PLAIN,1,cv::Scalar(0,0,255),1,1);
 #endif
         
-        tx = Xstate[0]+t*Xstate[1];
-        ty = Ystate[0]+t*Ystate[1];
-        tz = Zstate[0]+t*Zstate[1];
+        tx = Xstate[0]+t*Xstate[1]+0.5*Xstate[2]*Xstate[2];
+        ty = Ystate[0]+t*Ystate[1]+0.5*Ystate[2]*Ystate[2];
+        tz = Zstate[0]+t*Zstate[1]+0.5*Zstate[2]*Zstate[2];
         return Eigen::Vector3f(tx ,ty, tz);
 
 }

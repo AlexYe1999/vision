@@ -66,13 +66,13 @@ static const float LedMaxRatioRange = 12.0;
 
 //装甲板确定
 //长度之比最大 0~x
-static const float LengthRatio = 1.4; 
+static const float LengthRatio = 1.3; 
 //角度差误差范围 0~x
 static const float AngleRatioDelta = 0.1; 
 //灯条中心Y方向距离相对灯条长度 0~x
-static const float DeltaYRatio = 0.5;
+static const float DeltaYRatio = 0.4;
 //灯条中心X方向距离相对灯条长度 0~x
-static const float DeltaXRatio = 5.0;
+static const float DeltaXRatio = 3.0;
 
 //最小长宽比
 static const float ArmorMinRatio = 0.55; 
@@ -104,14 +104,13 @@ static const float CompensationFactor_Y = 0.0f;
 //炮口补偿系数Z轴
 static const float CompensationFactor_Z = 14.5f;
 //处理时间补偿
-static const float CompensationFactor_Proc = 0.018f;
+static const float CompensationFactor_Proc = 0.04f;
 //重力加速度
 static const float Gravity = 980;
 //加速度一半
 static const float Gravity_Half = 490.0f;
 //云台高度
 static const float Height_PAN =  35;
-
 
 //弧度
 static const float Radian = 3.1415926/180;
@@ -129,7 +128,7 @@ static const float rRuneWidth = 24;
 static const float rRuneHeight = 18;    
 
 //相机内参
-/* static const cv::Mat caremaMatrix_shoot = (
+static const cv::Mat caremaMatrix_shoot = (
         cv::Mat_<float>(3, 3) << 648.4910,                  0,                         328.2316,
                                                         0,                                     652.0198,         254.6992,
                                                         0,                                     0,                                          1
@@ -141,9 +140,9 @@ static const cv::Mat distCoeffs_shoot = (
                                                         0,
                                                         0,
                                                         0);  
-}  */
+} 
 
-//相机内参2
+/* //相机内参2
 static const cv::Mat caremaMatrix_shoot = (
         cv::Mat_<float>(3, 3) << 623.94494,                  0,                         308.05780,
                                                         0,                                     626.19679,         255.94809,
@@ -157,7 +156,7 @@ static const cv::Mat distCoeffs_shoot = (
                                                         -0.00029,
                                                         0);  
 }
-
+ */
 
 /*
 *   @brief:结构体
